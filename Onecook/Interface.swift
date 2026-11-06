@@ -133,7 +133,9 @@ final class ControlsViewController: NSViewController {
     private func makeRow(_ control: Control, y: CGFloat) -> NSView {
         let row = FlippedView(frame: NSRect(x: 0, y: y, width: 360, height: 55)); row.autoresizingMask = [.width]
         let icon = ControlIconView(symbol: control.symbol)
-        let title = label(settings.english ? control.en : control.zh); title.frame = NSRect(x: 60, y: 18, width: 232, height: 18)
+        let title = label(settings.english ? control.en : control.zh)
+        let titleHeight = title.fittingSize.height
+        title.frame = NSRect(x: 60, y: (row.bounds.height - titleHeight) / 2, width: 232, height: titleHeight)
         let toggle = ControlSwitch(frame: .zero)
         toggle.sizeToFit()
         let switchSize = toggle.frame.size
