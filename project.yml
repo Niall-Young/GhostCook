@@ -36,7 +36,6 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Onecook
     dependencies:
       - sdk: AppKit.framework
-      - sdk: Carbon.framework
       - sdk: IOKit.framework
       - sdk: IOBluetooth.framework
       - sdk: Intents.framework

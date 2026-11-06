@@ -17,8 +17,8 @@ Swift + AppKit 原生 macOS 菜单栏工具，参考 [OneTouch](https://github.c
 
 - 31 个控制项：桌面图标、深色模式、保持唤醒、蓝牙耳机与可读取的电量、专注模式、夜览、屏幕保护、原彩显示、前台应用、麦克风、Xcode 缓存、废纸篓、下载目录、磁盘、剪贴板、隐藏窗口、Dock、电源模式、Music、Spotify、隐藏文件、显示休眠、分辨率、小组件、台前调度、屏幕与键盘清洁、锁屏、退出其他应用、飞书 aily。
 - macOS 26 及以上使用 `NSGlassEffectView` 原生液态玻璃；macOS 13–25 使用 `NSVisualEffectView` 背景模糊。
-- 通用、自定义、快捷键、关于四个原生设置页；搜索、勾选、拖动排序与全局快捷键。
-- 唤醒、深色与专注模式支持定时；偏好、定时截止时间、磁盘保护与快捷键在本机保存。
+- 通用、自定义、关于三个原生设置页；搜索、勾选与拖动排序。
+- 唤醒、深色与专注模式支持定时；偏好、定时截止时间与磁盘保护在本机保存。
 - 清理下载和 Xcode 派生数据移入废纸篓；清空废纸篓会永久删除其中内容。清理、推出磁盘与退出其他应用先确认。
 
 ### 快速开始
@@ -36,7 +36,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app
 
 点击菜单栏单开关图标打开控制面板。底栏可打开设置、自定义或退出。超过 8 项时列表保持固定高度并滚动。辅助功能仅在引导或对应控制操作时申请；自动化、蓝牙与专注状态权限按系统要求处理。
 
-在自定义页勾选并拖动调整控制项；在快捷键页点击录制按钮后输入带 ⌘、⌃ 或 ⌥ 的组合，Esc 取消，Delete 清除。推出磁盘开关支持长按或右键打开保护名单。
+在自定义页勾选并拖动调整控制项；推出磁盘开关支持长按或右键打开保护名单。
 
 ### 开发与验证
 
@@ -44,7 +44,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app
 ./scripts/test.sh
 ```
 
-自动测试覆盖配置恢复、空选择、排序、定时与快捷键持久化、31 个符号、真实唤醒断言、材质和滚动布局、命令参数、输出与超时，以及 aily 状态解析。实际运行界面检查不等于所有系统操作已完成实机验收。
+自动测试覆盖配置恢复、空选择、排序、定时持久化、31 个符号、真实唤醒断言、材质和滚动布局、命令参数、输出与超时，以及 aily 状态解析。实际运行界面检查不等于所有系统操作已完成实机验收。
 
 Debug 包可通过明确的诊断参数打开菜单栏面板；此入口不会进入 Release 包：
 
@@ -73,8 +73,8 @@ Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate ide
 
 - 31 controls: desktop icons, Dark Mode, Keep Awake, Bluetooth headphones with available battery readings, Focus, Night Shift, screen saver, True Tone, front app, microphone, Xcode cache, Trash, Downloads, disks, clipboard, hide window, Dock, power modes, Music, Spotify, hidden files, display sleep, resolution, widgets, Stage Manager, screen and keyboard cleaning, lock screen, quit other apps, and Feishu aily.
 - Native `NSGlassEffectView` Liquid Glass on macOS 26+; `NSVisualEffectView` background blur on macOS 13–25.
-- Four native preferences panes: General, Customise, Shortcuts and About; search, selection, drag ordering and global shortcuts.
-- Timers for Keep Awake, Dark Mode and Focus; preferences, deadlines, disk protection and shortcuts persist locally.
+- Three native preferences panes: General, Customise and About; search, selection and drag ordering.
+- Timers for Keep Awake, Dark Mode and Focus; preferences, deadlines and disk protection persist locally.
 - Downloads and Xcode derived data are moved to Trash; emptying Trash permanently deletes its contents. Cleanup, eject and quit-other-apps actions require confirmation.
 
 ### Quick Start
@@ -92,7 +92,7 @@ Alternatively, open `Onecook.xcodeproj` and run the Onecook scheme. `project.yml
 
 Click the single-switch menu bar icon. The footer opens Settings, Customise or Quit. More than eight controls scroll within a fixed-height list. Accessibility is requested through onboarding or related controls; automation, Bluetooth and Focus permissions follow macOS requirements.
 
-Select and drag controls in Customise. Click a recording button in Shortcuts and press a combination with ⌘, ⌃ or ⌥; Escape cancels, Delete clears. Long-press or right-click the eject switch to manage protected disks.
+Select and drag controls in Customise. Long-press or right-click the eject switch to manage protected disks.
 
 ### Development and Verification
 
@@ -100,7 +100,7 @@ Select and drag controls in Customise. Click a recording button in Shortcuts and
 ./scripts/test.sh
 ```
 
-Automated tests cover preference recovery, empty selection, ordering, timer and shortcut persistence, all 31 symbols, a real wake assertion, material and scrolling layout, command arguments, output and timeout, and aily status parsing. Inspecting the running interface does not establish acceptance of every system operation.
+Automated tests cover preference recovery, empty selection, ordering, timer persistence, all 31 symbols, a real wake assertion, material and scrolling layout, command arguments, output and timeout, and aily status parsing. Inspecting the running interface does not establish acceptance of every system operation.
 
 The Debug app supports an explicit diagnostic argument to open the menu panel; this entry is absent from Release builds:
 

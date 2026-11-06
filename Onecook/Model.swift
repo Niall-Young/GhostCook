@@ -46,12 +46,6 @@ struct Control: Identifiable {
     ]
 }
 
-struct Shortcut: Codable, Equatable {
-    let keyCode: UInt32
-    let modifiers: UInt32
-    let display: String
-}
-
 final class Settings {
     let defaults: UserDefaults
     init(defaults: UserDefaults = .standard) { self.defaults = defaults }
@@ -67,10 +61,6 @@ final class Settings {
     var visible: [String] {
         get { Self.validIDs(defaults.stringArray(forKey: "visible") ?? Array(Control.all.prefix(8).map(\.id))) }
         set { defaults.set(Self.validIDs(newValue), forKey: "visible"); changed() }
-    }
-    var shortcuts: [String: Shortcut] {
-        get { read("shortcuts", fallback: [:]) }
-        set { write(newValue, key: "shortcuts"); changed() }
     }
     var deadlines: [String: Date] {
         get { (read("deadlines", fallback: [:]) as [String: Date]).filter { id, _ in Control.all.contains { $0.id == id && $0.isTimed } } }

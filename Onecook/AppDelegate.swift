@@ -28,7 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var preferences: PreferencesController?
     private var guide: NSWindow?
     private var guideTimer: Timer?
-    private var shortcuts: ShortcutManager!
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private var refreshTimer: Timer?
@@ -60,16 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             if alert.runModal() == .alertSecondButtonReturn { SystemSettings.requestAccessibility() }
         }
         store.onBeforeExternalUI = { [weak self] in self?.hidePanel() }
-        shortcuts = ShortcutManager()
-        shortcuts.onTrigger = { [weak self] id in
-            guard let self, let control = Control.all.first(where: { $0.id == id }) else { return }
-            self.store.previousApp = NSWorkspace.shared.frontmostApplication
-            if control.isTimed && !self.store.state(id).enabled || id == "resolution" || control.needsConfirmation {
-                self.showPanel(); self.controls.activate(control)
-            } else { self.store.perform(control) }
-        }
-        _ = shortcuts.sync(settings.shortcuts)
-        NotificationCenter.default.addObserver(self, selector: #selector(syncSettings), name: .settingsChanged, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(frontAppChanged(_:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in self?.hidePanel() }
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) { [weak self] event in
@@ -90,7 +79,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func frontAppChanged(_ notification: Notification) {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, app.processIdentifier != getpid() { store.previousApp = app }
     }
-    @objc private func syncSettings() { _ = shortcuts.sync(settings.shortcuts) }
     @objc private func togglePanel() {
         if panel.isVisible { hidePanel() } else { showPanel() }
     }
@@ -114,7 +102,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         hidePanel()
         if preferences == nil {
             preferences = PreferencesController(settings: settings)
-            preferences?.validateShortcuts = { [weak self] in self?.shortcuts.sync($0) ?? [] }
         }
         preferences?.show(pane: pane)
     }

@@ -47,19 +47,14 @@ final class OnecookTests: XCTestCase {
         settings.move("trueTone", before: nil)
         XCTAssertEqual(settings.order.last, "trueTone")
     }
-    func testTimersAndShortcutsPersistAcrossSettingsInstances() {
+    func testTimersPersistAcrossSettingsInstances() {
         let deadline = Date(timeIntervalSince1970: 1800000000)
-        let shortcut = Shortcut(keyCode: 12, modifiers: 256, display: "⌘Q")
         settings.deadlines = ["awake": deadline]
-        settings.shortcuts = ["awake": shortcut]
         let restored = Settings(defaults: defaults)
         XCTAssertEqual(restored.deadlines["awake"], deadline)
-        XCTAssertEqual(restored.shortcuts["awake"], shortcut)
     }
     func testCorruptStoredDataDoesNotCrash() {
-        defaults.set(Data("broken".utf8), forKey: "shortcuts")
         defaults.set(Data("broken".utf8), forKey: "deadlines")
-        XCTAssertTrue(settings.shortcuts.isEmpty)
         XCTAssertTrue(settings.deadlines.isEmpty)
     }
     func testDangerousActionsRequireConfirmation() {

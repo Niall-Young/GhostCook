@@ -12,13 +12,11 @@
 		2D923D5905D9028F533D3113 /* Devices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6894DF376816F2D596664885 /* Devices.swift */; };
 		3F4F7FDE02703BF266B76A37 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA16245512262DBF75A7A50C /* Model.swift */; };
 		4F77E6BE3F84141562F61705 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EF854241D4A807A6E28DFA /* AppDelegate.swift */; };
-		522633BAB1CC1ABB3E1D2A35 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 892B029EDE19263BA409E2D7 /* Carbon.framework */; };
 		52BB18196D43986A9B09DB50 /* AilyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC8B9597AC405476C6FB351D /* AilyService.swift */; };
 		5950B41BDCD0EB752335FC2E /* CleaningController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F0FDE7A3D1BA11DA1BEB6C /* CleaningController.swift */; };
 		60477E2CC95A05C30560575E /* Intents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB85E551CC8DE8C91BA68206 /* Intents.framework */; };
 		81AE929E4BDFFBA68F957FD6 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F78E35F8C88F1E78B037E4D /* Preferences.swift */; };
 		A9F386BCBCFE1C0E583CC2C3 /* IOBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F642B736BA3B1BD1F2D0A18 /* IOBluetooth.framework */; };
-		AE7B865E1C901DC2E7977FBD /* ShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D6D09889F14E48D6DC228D /* ShortcutManager.swift */; };
 		B505640B04F2656C7198F7CF /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39C8BC346DD8A13744E39EFC /* AppKit.framework */; };
 		C5D0691A74074A50BB518913 /* OnecookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5052FCE8894BEF6C144346 /* OnecookTests.swift */; };
 		CC29D2A8120E682B0DC09200 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5480AE01A3EED971969CA0E6 /* IOKit.framework */; };
@@ -52,10 +50,8 @@
 		6E5052FCE8894BEF6C144346 /* OnecookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnecookTests.swift; sourceTree = "<group>"; };
 		7132F8AD3B28873CAAD6FB27 /* Onecook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onecook.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7C6AADE5A390D0259D63109C /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
-		892B029EDE19263BA409E2D7 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		8D4F3840DA04022E11989330 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		AC8B9597AC405476C6FB351D /* AilyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AilyService.swift; sourceTree = "<group>"; };
-		D7D6D09889F14E48D6DC228D /* ShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutManager.swift; sourceTree = "<group>"; };
 		EB85E551CC8DE8C91BA68206 /* Intents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Intents.framework; path = System/Library/Frameworks/Intents.framework; sourceTree = SDKROOT; };
 		F7F0FDE7A3D1BA11DA1BEB6C /* CleaningController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleaningController.swift; sourceTree = "<group>"; };
 		FA16245512262DBF75A7A50C /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
@@ -67,7 +63,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B505640B04F2656C7198F7CF /* AppKit.framework in Frameworks */,
-				522633BAB1CC1ABB3E1D2A35 /* Carbon.framework in Frameworks */,
 				CC29D2A8120E682B0DC09200 /* IOKit.framework in Frameworks */,
 				A9F386BCBCFE1C0E583CC2C3 /* IOBluetooth.framework in Frameworks */,
 				60477E2CC95A05C30560575E /* Intents.framework in Frameworks */,
@@ -81,7 +76,6 @@
 			isa = PBXGroup;
 			children = (
 				39C8BC346DD8A13744E39EFC /* AppKit.framework */,
-				892B029EDE19263BA409E2D7 /* Carbon.framework */,
 				EB85E551CC8DE8C91BA68206 /* Intents.framework */,
 				3F642B736BA3B1BD1F2D0A18 /* IOBluetooth.framework */,
 				5480AE01A3EED971969CA0E6 /* IOKit.framework */,
@@ -118,7 +112,6 @@
 				8D4F3840DA04022E11989330 /* main.swift */,
 				FA16245512262DBF75A7A50C /* Model.swift */,
 				2F78E35F8C88F1E78B037E4D /* Preferences.swift */,
-				D7D6D09889F14E48D6DC228D /* ShortcutManager.swift */,
 				150A6A63DE18D92705AA7BE9 /* SystemSupport.swift */,
 				64672965B49D4A46A9204AF8 /* Resources */,
 			);
@@ -247,7 +240,6 @@
 				D966DE637572B62D67BCDEF5 /* Interface.swift in Sources */,
 				3F4F7FDE02703BF266B76A37 /* Model.swift in Sources */,
 				81AE929E4BDFFBA68F957FD6 /* Preferences.swift in Sources */,
-				AE7B865E1C901DC2E7977FBD /* ShortcutManager.swift in Sources */,
 				0A58F58CB4E8AF0DFEB84297 /* SystemSupport.swift in Sources */,
 				E09A2E7F1770DFBE0F79CF68 /* main.swift in Sources */,
 			);

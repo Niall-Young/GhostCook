@@ -4,7 +4,6 @@ import ServiceManagement
 final class PreferencesController: NSWindowController {
     let settings: Settings
     private let tabs = PreferenceTabs()
-    var validateShortcuts: (([String: Shortcut]) -> [String])?
     init(settings: Settings) {
         self.settings = settings
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 490), styleMask: [.titled, .closable], backing: .buffered, defer: false)
@@ -28,8 +27,7 @@ final class PreferencesController: NSWindowController {
         tabs.tabViewItems.forEach { tabs.removeTabViewItem($0) }
         let pages: [(String, String, NSViewController)] = [
             (settings.text("通用", "General"), "gearshape", GeneralPreferences(settings: settings)),
-            (settings.text("自定义", "Customise"), "slider.horizontal.3", ControlListPreferences(settings: settings, shortcuts: false, validate: validateShortcuts)),
-            (settings.text("快捷键", "Shortcuts"), "keyboard", ControlListPreferences(settings: settings, shortcuts: true, validate: { [weak self] in self?.validateShortcuts?($0) ?? [] })),
+            (settings.text("自定义", "Customise"), "slider.horizontal.3", ControlListPreferences(settings: settings)),
             (settings.text("关于", "About"), "info.circle", AboutPreferences(settings: settings))
         ]
         for (title, symbol, page) in pages {
@@ -82,14 +80,12 @@ final class GeneralPreferences: NSViewController {
 
 final class ControlListPreferences: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
     let settings: Settings
-    let shortcuts: Bool
-    let validate: (([String: Shortcut]) -> [String])?
     private let table = NSTableView()
     private let search = NSSearchField()
     private var summary: NSTextField!
     private let dragType = NSPasteboard.PasteboardType("dev.nialyoung.onecook.control")
     private var items: [Control] { settings.controls.filter { search.stringValue.isEmpty || $0.zh.localizedCaseInsensitiveContains(search.stringValue) || $0.en.localizedCaseInsensitiveContains(search.stringValue) } }
-    init(settings: Settings, shortcuts: Bool, validate: (([String: Shortcut]) -> [String])?) { self.settings = settings; self.shortcuts = shortcuts; self.validate = validate; super.init(nibName: nil, bundle: nil) }
+    init(settings: Settings) { self.settings = settings; super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 440, height: 490))
@@ -110,7 +106,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         if !items.isEmpty { table.scrollRowToVisible(0) }
     }
     private func updateSummary() {
-        summary.stringValue = shortcuts ? settings.text("为控制项设置全局快捷键", "Set global shortcuts for controls") : settings.text("选择控制项并拖动调整顺序。已选择 \(settings.visible.count)", "Select and drag to reorder. \(settings.visible.count) selected")
+        summary.stringValue = settings.text("选择控制项并拖动调整顺序。已选择 \(settings.visible.count)", "Select and drag to reorder. \(settings.visible.count) selected")
     }
     @objc private func reload() { guard isViewLoaded else { return }; updateSummary(); table.reloadData() }
     func controlTextDidChange(_ obj: Notification) { table.reloadData() }
@@ -122,50 +118,27 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         let icon = NSImageView(); icon.image = NSImage(systemSymbolName: control.symbol, accessibilityDescription: nil); icon.contentTintColor = .secondaryLabelColor
         let title = label(settings.english ? control.en : control.zh)
         let accessory: NSView
-        if shortcuts {
-            let button = ShortcutButton(frame: .zero); button.title = settings.shortcuts[control.id]?.display ?? settings.text("录制快捷键", "Record shortcut")
-            button.setAccessibilityLabel((settings.english ? control.en : control.zh) + " " + button.title)
-            button.onRecord = { [weak self] value in
-                guard let self else { return }
-                var proposed = self.settings.shortcuts
-                if let value, let duplicate = proposed.first(where: { $0.key != control.id && $0.value.keyCode == value.keyCode && $0.value.modifiers == value.modifiers }) {
-                    let alert = NSAlert(); alert.messageText = self.settings.text("快捷键已被使用", "Shortcut already in use"); alert.informativeText = Control.all.first { $0.id == duplicate.key }.map { self.settings.english ? $0.en : $0.zh } ?? ""; alert.runModal(); self.table.reloadData(); return
-                }
-                proposed[control.id] = value
-                let failures = self.validate?(proposed) ?? []
-                guard failures.isEmpty else {
-                    _ = self.validate?(self.settings.shortcuts)
-                    let alert = NSAlert(); alert.messageText = self.settings.text("无法注册快捷键", "Cannot register shortcut"); alert.informativeText = self.settings.text("此组合可能被系统或其他应用占用，请选择其他组合。", "This combination may be used by macOS or another app. Choose a different shortcut."); alert.runModal(); self.table.reloadData(); return
-                }
-                self.settings.shortcuts = proposed
-            }
-            accessory = button
-        } else {
-            let check = NSButton(checkboxWithTitle: "", target: nil, action: nil); check.controlSize = .mini; check.state = settings.visible.contains(control.id) ? .on : .off
-            check.setAccessibilityLabel(settings.english ? control.en : control.zh)
-            let target = VisibilityTarget { [weak self] in self?.settings.toggleVisibility(control.id) }
-            check.target = target; check.action = #selector(VisibilityTarget.invoke)
-            objc_setAssociatedObject(check, &visibilityTargetKey, target, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-            accessory = check
-        }
+        let check = NSButton(checkboxWithTitle: "", target: nil, action: nil); check.controlSize = .mini; check.state = settings.visible.contains(control.id) ? .on : .off
+        check.setAccessibilityLabel(settings.english ? control.en : control.zh)
+        let target = VisibilityTarget { [weak self] in self?.settings.toggleVisibility(control.id) }
+        check.target = target; check.action = #selector(VisibilityTarget.invoke)
+        objc_setAssociatedObject(check, &visibilityTargetKey, target, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        accessory = check
         for element in [icon, title, accessory] { cell.addSubview(element); element.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
             icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8), icon.widthAnchor.constraint(equalToConstant: 18), icon.heightAnchor.constraint(equalToConstant: 18), icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
             title.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12), title.centerYAnchor.constraint(equalTo: cell.centerYAnchor), title.trailingAnchor.constraint(lessThanOrEqualTo: accessory.leadingAnchor, constant: -8),
-            accessory.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8), accessory.centerYAnchor.constraint(equalTo: cell.centerYAnchor), accessory.widthAnchor.constraint(equalToConstant: shortcuts ? 142 : 18)
+            accessory.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8), accessory.centerYAnchor.constraint(equalTo: cell.centerYAnchor), accessory.widthAnchor.constraint(equalToConstant: 18)
         ])
-        if !shortcuts {
-            let grip = NSImageView(); grip.image = NSImage(systemSymbolName: "line.3.horizontal", accessibilityDescription: nil); grip.contentTintColor = .tertiaryLabelColor
-            cell.addSubview(grip); grip.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([grip.trailingAnchor.constraint(equalTo: accessory.leadingAnchor, constant: -12), grip.centerYAnchor.constraint(equalTo: cell.centerYAnchor), grip.widthAnchor.constraint(equalToConstant: 14)])
-        }
+        let grip = NSImageView(); grip.image = NSImage(systemSymbolName: "line.3.horizontal", accessibilityDescription: nil); grip.contentTintColor = .tertiaryLabelColor
+        cell.addSubview(grip); grip.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([grip.trailingAnchor.constraint(equalTo: accessory.leadingAnchor, constant: -12), grip.centerYAnchor.constraint(equalTo: cell.centerYAnchor), grip.widthAnchor.constraint(equalToConstant: 14)])
         return cell
     }
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-        guard !shortcuts else { return nil }
         let item = NSPasteboardItem(); item.setString(items[row].id, forType: dragType); return item
     }
-    func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation { !shortcuts && dropOperation == .above ? .move : [] }
+    func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation { dropOperation == .above ? .move : [] }
     func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
         guard let id = info.draggingPasteboard.string(forType: dragType), Control.all.contains(where: { $0.id == id }) else { return false }
         let current = items
