@@ -188,6 +188,7 @@ private struct GeneralPreferencesView: View {
                     Spacer()
                 }
                 .padding(.vertical, 4)
+                UpdatePreferencesView(english: model.english)
             } header: {
                 Text(model.text("关于", "About")).font(.system(size: 14, weight: .semibold))
             }

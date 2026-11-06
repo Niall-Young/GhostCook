@@ -62,6 +62,8 @@ open build/DerivedData/Build/Products/Debug/GhostCook.app
 
 主面板控制项仅显示图标、名称与开关，不显示辅助文本或错误弹窗；操作错误记录到系统日志。
 
+在设置的“基础设置 → 关于”点击“检查更新”。更新检查读取 GitHub 公开的最新 Release 页面，不使用 GitHub API，也不需要账号、订阅或 Token。发现较新正式版本后，可通过默认浏览器下载匹配 Mac 架构的 DMG、ZIP 或 PKG；没有合适安装包时打开该版本的发布页面。下载后手动安装，应用不会自动替换自身。版本标签使用 `v0.1.0` 或 `0.1.0` 等数字版本；草稿与预发布不参与检查。
+
 在设置的“控制项”页面勾选并拖动调整控制项；推出磁盘开关支持长按或右键打开保护名单。
 
 ### 开发与验证
@@ -70,7 +72,7 @@ open build/DerivedData/Build/Products/Debug/GhostCook.app
 ./scripts/test.sh
 ```
 
-自动测试覆盖配置恢复、空选择、排序、定时持久化、31 个符号、真实唤醒断言、材质和滚动布局、命令参数、输出与超时，以及 aily 状态解析。实际运行界面检查不等于所有系统操作已完成实机验收。
+自动测试覆盖配置恢复、空选择、排序、定时持久化、31 个符号、真实唤醒断言、材质和滚动布局、命令参数、输出与超时，以及 aily 状态解析；更新测试覆盖版本比较、安装包架构筛选、无发布版本与 HTTP 错误。实际运行界面检查不等于所有系统操作已完成实机验收。
 
 Debug 包可通过明确的诊断参数打开菜单栏面板或设置窗口；此入口不会进入 Release 包：
 
@@ -123,6 +125,8 @@ Click the ghost menu bar icon. The footer opens Settings or Quit. More than eigh
 
 The main panel shows each control’s icon, name and switch without secondary text or error alerts. Operation errors are written to the system log.
 
+Click “Check for Updates” in General → About. Checks use the public GitHub latest Release page without the GitHub API, an account, a subscription or a token. When a newer stable release exists, the default browser downloads a DMG, ZIP or PKG matching the Mac architecture; if no suitable installer exists, the release page opens instead. Install the downloaded update manually; the app does not replace itself. Release tags must be numeric versions such as `v0.1.0` or `0.1.0`; drafts and prereleases are excluded.
+
 Select and drag controls in the Controls settings page. Long-press or right-click the eject switch to manage protected disks.
 
 ### Development and Verification
@@ -131,7 +135,7 @@ Select and drag controls in the Controls settings page. Long-press or right-clic
 ./scripts/test.sh
 ```
 
-Automated tests cover preference recovery, empty selection, ordering, timer persistence, all 31 symbols, a real wake assertion, material and scrolling layout, command arguments, output and timeout, and aily status parsing. Inspecting the running interface does not establish acceptance of every system operation.
+Automated tests cover preference recovery, empty selection, ordering, timer persistence, all 31 symbols, a real wake assertion, material and scrolling layout, command arguments, output and timeout, and aily status parsing; update tests cover version comparison, installer architecture selection, missing releases and HTTP errors. Inspecting the running interface does not establish acceptance of every system operation.
 
 The Debug app supports explicit diagnostic arguments to open the menu panel or settings window; this entry is absent from Release builds:
 
