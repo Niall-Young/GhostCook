@@ -110,6 +110,34 @@ final class OnecookTests: XCTestCase {
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
         XCTAssertEqual(controller.desiredHeight, 511)
     }
+    @MainActor func testUnifiedPreferencesSearchAndLanguageRebuild() throws {
+        let controller = PreferencesController(settings: settings)
+        let window = try XCTUnwrap(controller.window)
+        for english in [false, true] {
+            settings.english = english
+            let content = try XCTUnwrap(window.contentViewController)
+            content.view.layoutSubtreeIfNeeded()
+            XCTAssertNil(window.toolbar)
+            let list = try XCTUnwrap(content.children.compactMap { $0 as? ControlListPreferences }.first)
+            let search = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSSearchField }.first)
+            let table = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSTableView }.first)
+            XCTAssertEqual(table.numberOfRows, 31)
+            XCTAssertEqual(search.placeholderString, english ? "Search controls" : "搜索控制项")
+            let scroll = try XCTUnwrap(table.enclosingScrollView)
+            XCTAssertGreaterThan(scroll.frame.height, 350)
+            XCTAssertGreaterThan(scroll.frame.width, 350)
+            search.stringValue = "aily"
+            list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
+            XCTAssertEqual(table.numberOfRows, 1)
+            search.stringValue = "no matching control"
+            list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
+            XCTAssertEqual(table.numberOfRows, 0)
+            search.stringValue = ""
+            list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
+            XCTAssertEqual(table.numberOfRows, 31)
+        }
+        window.close()
+    }
     @MainActor func testKeepAwakeCreatesAndReleasesRealAssertion() {
         let store = ControlStore(settings: settings)
         let control = Control.all.first { $0.id == "awake" }!

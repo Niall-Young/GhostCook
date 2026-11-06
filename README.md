@@ -17,7 +17,7 @@ Swift + AppKit 原生 macOS 菜单栏工具，参考 [OneTouch](https://github.c
 
 - 31 个控制项：桌面图标、深色模式、保持唤醒、蓝牙耳机与可读取的电量、专注模式、夜览、屏幕保护、原彩显示、前台应用、麦克风、Xcode 缓存、废纸篓、下载目录、磁盘、剪贴板、隐藏窗口、Dock、电源模式、Music、Spotify、隐藏文件、显示休眠、分辨率、小组件、台前调度、屏幕与键盘清洁、锁屏、退出其他应用、飞书 aily。
 - macOS 26 及以上使用 `NSGlassEffectView` 原生液态玻璃；macOS 13–25 使用 `NSVisualEffectView` 背景模糊。
-- 通用、自定义、关于三个原生设置页；搜索、勾选与拖动排序。
+- 单窗口双栏原生设置：左侧集中语言、登录启动、权限与应用信息，右侧支持控制项搜索、勾选与拖动排序。
 - 唤醒、深色与专注模式支持定时；偏好、定时截止时间与磁盘保护在本机保存。
 - 清理下载和 Xcode 派生数据移入废纸篓；清空废纸篓会永久删除其中内容。清理、推出磁盘与退出其他应用先确认。
 
@@ -38,7 +38,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app
 
 主面板控制项仅显示图标、名称与开关，不显示辅助文本或错误弹窗；操作错误记录到系统日志。
 
-在自定义页勾选并拖动调整控制项；推出磁盘开关支持长按或右键打开保护名单。
+在设置窗口右侧勾选并拖动调整控制项；推出磁盘开关支持长按或右键打开保护名单。
 
 ### 开发与验证
 
@@ -75,7 +75,7 @@ Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate ide
 
 - 31 controls: desktop icons, Dark Mode, Keep Awake, Bluetooth headphones with available battery readings, Focus, Night Shift, screen saver, True Tone, front app, microphone, Xcode cache, Trash, Downloads, disks, clipboard, hide window, Dock, power modes, Music, Spotify, hidden files, display sleep, resolution, widgets, Stage Manager, screen and keyboard cleaning, lock screen, quit other apps, and Feishu aily.
 - Native `NSGlassEffectView` Liquid Glass on macOS 26+; `NSVisualEffectView` background blur on macOS 13–25.
-- Three native preferences panes: General, Customise and About; search, selection and drag ordering.
+- A single native settings window: language, launch at login, permissions and app information on the left; searchable controls with selection and drag ordering on the right.
 - Timers for Keep Awake, Dark Mode and Focus; preferences, deadlines and disk protection persist locally.
 - Downloads and Xcode derived data are moved to Trash; emptying Trash permanently deletes its contents. Cleanup, eject and quit-other-apps actions require confirmation.
 
@@ -96,7 +96,7 @@ Click the single-switch menu bar icon. The footer opens Settings or Quit. More t
 
 The main panel shows each control’s icon, name and switch without secondary text or error alerts. Operation errors are written to the system log.
 
-Select and drag controls in Customise. Long-press or right-click the eject switch to manage protected disks.
+Select and drag controls on the right side of Settings. Long-press or right-click the eject switch to manage protected disks.
 
 ### Development and Verification
 
