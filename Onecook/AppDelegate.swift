@@ -35,9 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        NSApp.appearance = settings.theme.appearance
+        NotificationCenter.default.addObserver(self, selector: #selector(appearancePreferenceChanged(_:)), name: .settingsChanged, object: nil)
         statusItem = NSStatusBar.system.statusItem(withLength: 28)
         if let button = statusItem.button {
-            button.image = Brand.icon(size: 18); button.target = self; button.action = #selector(togglePanel); button.toolTip = "Onecook"; button.setAccessibilityLabel("Onecook")
+            button.image = Brand.icon(size: 18); button.target = self; button.action = #selector(togglePanel); button.toolTip = "GhostCook"; button.setAccessibilityLabel("GhostCook")
         }
         controls = ControlsViewController(store: store)
         controls.onSettings = { [weak self] in self?.showPreferences($0) }
@@ -49,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.contentViewController = controls; panel.delegate = self
         store.onError = { control, error in
-            NSLog("Onecook [%@]: %@", control.id, error.localizedDescription)
+            NSLog("GhostCook [%@]: %@", control.id, error.localizedDescription)
         }
         store.onBeforeExternalUI = { [weak self] in self?.hidePanel() }
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(frontAppChanged(_:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
@@ -66,8 +68,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         if !settings.defaults.bool(forKey: "onboardingSeen") && !AXIsProcessTrusted() { showGuide() }
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--show-settings") { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.showPreferences(0) } }
         if ProcessInfo.processInfo.arguments.contains("--show-controls") { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.showPanel() } }
         #endif
+    }
+    @objc private func appearancePreferenceChanged(_ notification: Notification) {
+        guard let source = notification.object as? Settings, source === settings else { return }
+        NSApp.appearance = settings.theme.appearance
     }
     @objc private func frontAppChanged(_ notification: Notification) {
         if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, app.processIdentifier != getpid() { store.previousApp = app }
@@ -107,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.title = settings.text("辅助功能", "Accessibility"); window.isReleasedWhenClosed = false
         let icon = NSImageView(); icon.image = Brand.icon(size: 48); icon.widthAnchor.constraint(equalToConstant: 48).isActive = true; icon.heightAnchor.constraint(equalToConstant: 48).isActive = true
         let title = label(settings.text("开启辅助功能权限", "Enable Accessibility"), size: 19, weight: .medium)
-        let detail = NSTextField(wrappingLabelWithString: settings.text("授权后可使用专注模式、键盘清洁与系统控制。", "Grant access to use Focus, keyboard cleaning and system controls.")); detail.alignment = .center; detail.textColor = .secondaryLabelColor
+        let detail = NSTextField(wrappingLabelWithString: settings.text("授权后可使用专注模式、键盘清洁与系统控制。", "Grant access to use Focus, keyboard cleaning and system controls.")); detail.font = .systemFont(ofSize: 14); detail.alignment = .center; detail.textColor = .secondaryLabelColor
         let button = ActionButton(title: settings.text("打开辅助功能设置", "Open Accessibility Settings")) { SystemSettings.requestAccessibility() }; button.bezelStyle = .rounded; button.showsBorderOnlyWhileMouseInside = false
         let stack = NSStackView(views: [icon, title, detail, button]); stack.orientation = .vertical; stack.spacing = 16
         let host = NSView(); window.contentView = host; fill(stack, in: host, inset: 30)

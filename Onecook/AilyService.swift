@@ -1,6 +1,6 @@
 import Foundation
 
-// launchd owns the one-shot startup job, so the daemon outlives Onecook.
+// launchd owns the one-shot startup job, so the daemon outlives GhostCook.
 // No LaunchAgent is installed, and the job does not enable launch at login.
 enum AilyService {
     static var executable: String { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".aily-cli/bin/aily-cli").path }

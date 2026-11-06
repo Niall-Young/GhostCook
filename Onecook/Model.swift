@@ -35,15 +35,19 @@ struct Control: Identifiable {
         Control(id: "spotify", symbol: "waveform", zh: "Spotify 播放", en: "Spotify playback", detailZH: "播放或暂停 Spotify", detailEN: "Play or pause Spotify"),
         Control(id: "hiddenFiles", symbol: "folder", zh: "显示隐藏文件", en: "Show hidden files", detailZH: "在 Finder 中显示文件", detailEN: "Reveal files in Finder"),
         Control(id: "displaySleep", symbol: "display", zh: "显示器休眠", en: "Display sleep", detailZH: "关闭显示屏", detailEN: "Turn the display off"),
-        Control(id: "resolution", symbol: "display.and.arrow.down", zh: "屏幕分辨率", en: "Screen resolution", detailZH: "直接在 Onecook 中选择", detailEN: "Choose directly in Onecook"),
+        Control(id: "resolution", symbol: "display.and.arrow.down", zh: "屏幕分辨率", en: "Screen resolution", detailZH: "直接在 GhostCook 中选择", detailEN: "Choose directly in GhostCook"),
         Control(id: "hideWidgets", symbol: "rectangle.3.group", zh: "隐藏桌面小组件", en: "Hide desktop widgets", detailZH: "在普通桌面和台前调度中保持整洁", detailEN: "Keep the desktop clear in every workspace mode"),
         Control(id: "stageManager", symbol: "squares.leading.rectangle", zh: "台前调度", en: "Stage Manager", detailZH: "围绕当前任务整理已打开的窗口", detailEN: "Organise open windows around the current task"),
         Control(id: "cleanScreen", symbol: "eye", zh: "屏幕清洁", en: "Clean screen", detailZH: "长按 Esc 退出", detailEN: "Hold Esc to finish"),
         Control(id: "lockKeyboard", symbol: "keyboard", zh: "键盘清洁", en: "Keyboard cleaning", detailZH: "清洁时忽略键盘输入 · 从菜单关闭", detailEN: "Ignore key presses while cleaning · turn off from the menu"),
         Control(id: "lockScreen", symbol: "lock", zh: "锁定屏幕", en: "Lock screen", detailZH: "需要密码才能继续", detailEN: "Require your password"),
-        Control(id: "quitApps", symbol: "rectangle.stack.badge.minus", zh: "关闭其他应用", en: "Quit other apps", detailZH: "保留当前应用、Onecook 与 Finder", detailEN: "Keeps your current app, Onecook and Finder"),
+        Control(id: "quitApps", symbol: "rectangle.stack.badge.minus", zh: "关闭其他应用", en: "Quit other apps", detailZH: "保留当前应用、GhostCook 与 Finder", detailEN: "Keeps your current app, GhostCook and Finder"),
         Control(id: "feishuAily", symbol: "paperplane.fill", zh: "飞书 aily", en: "Feishu aily", detailZH: "启动飞书 aily 后台服务", detailEN: "Starts the aily background service"),
     ]
+}
+
+enum AppTheme: String, CaseIterable {
+    case system, light, dark
 }
 
 final class Settings {
@@ -52,6 +56,10 @@ final class Settings {
     var english: Bool {
         get { defaults.string(forKey: "language") == "en" }
         set { defaults.set(newValue ? "en" : "zh", forKey: "language"); changed() }
+    }
+    var theme: AppTheme {
+        get { AppTheme(rawValue: defaults.string(forKey: "theme") ?? "") ?? .system }
+        set { defaults.set(newValue.rawValue, forKey: "theme"); changed() }
     }
     func text(_ zh: String, _ en: String) -> String { english ? en : zh }
     var order: [String] {

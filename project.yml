@@ -7,19 +7,21 @@ settings:
   base:
     SWIFT_VERSION: '5.0'
     MACOSX_DEPLOYMENT_TARGET: '13.0'
-    CODE_SIGN_IDENTITY: '-'
+    CODE_SIGN_IDENTITY: 'Developer ID Application: Niall Young (V8GVW783CK)'
     CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: V8GVW783CK
     ENABLE_HARDENED_RUNTIME: YES
     ENABLE_DEBUG_DYLIB: NO
     GENERATE_INFOPLIST_FILE: YES
     INFOPLIST_KEY_LSUIElement: YES
-    INFOPLIST_KEY_NSAppleEventsUsageDescription: Onecook 需要控制你选择的应用和系统设置
-    INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: Onecook 需要连接你选择的蓝牙耳机
-    INFOPLIST_KEY_NSFocusStatusUsageDescription: Onecook 需要读取专注模式状态
+    INFOPLIST_KEY_NSAppleEventsUsageDescription: GhostCook 需要控制你选择的应用和系统设置
+    INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: GhostCook 需要连接你选择的蓝牙耳机
+    INFOPLIST_KEY_NSFocusStatusUsageDescription: GhostCook 需要读取专注模式状态
     MARKETING_VERSION: '0.1.0'
     CURRENT_PROJECT_VERSION: '1'
 targets:
   Onecook:
+    productName: GhostCook
     type: application
     platform: macOS
     sources: [Onecook]
@@ -31,9 +33,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook
-        PRODUCT_NAME: Onecook
+        PRODUCT_NAME: GhostCook
+        PRODUCT_MODULE_NAME: Onecook
         ASSETCATALOG_COMPILER_APPICON_NAME: GhostCook
-        INFOPLIST_KEY_CFBundleDisplayName: Onecook
+        INFOPLIST_KEY_CFBundleDisplayName: GhostCook
     dependencies:
       - sdk: AppKit.framework
       - sdk: IOKit.framework
@@ -49,6 +52,7 @@ targets:
       base:
         MACOSX_DEPLOYMENT_TARGET: '14.0'
         PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/GhostCook.app/Contents/MacOS/GhostCook
 schemes:
   Onecook:
     build:

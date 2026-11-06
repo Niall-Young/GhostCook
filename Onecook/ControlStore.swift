@@ -159,7 +159,7 @@ final class ControlStore {
         case "awake":
             if enabled && assertion == 0 {
                 var value: IOPMAssertionID = 0
-                let code = IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString, IOPMAssertionLevel(kIOPMAssertionLevelOn), "Onecook keep awake" as CFString, &value)
+                let code = IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString, IOPMAssertionLevel(kIOPMAssertionLevelOn), "GhostCook keep awake" as CFString, &value)
                 guard code == kIOReturnSuccess else { throw OperationError("无法保持唤醒 / Cannot prevent sleep") }
                 assertion = value
             } else if !enabled && assertion != 0 { IOPMAssertionRelease(assertion); assertion = 0 }

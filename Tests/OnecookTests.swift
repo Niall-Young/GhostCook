@@ -24,6 +24,20 @@ final class OnecookTests: XCTestCase {
             XCTAssertNotNil(NSImage(systemSymbolName: control.symbol, accessibilityDescription: nil), control.id)
         }
     }
+    func testThemeDefaultsPersistsAndRecoversFromUnknownValue() {
+        XCTAssertEqual(settings.theme, .system)
+        for theme in AppTheme.allCases {
+            settings.theme = theme
+            XCTAssertEqual(Settings(defaults: defaults).theme, theme)
+        }
+        defaults.set("unknown-theme", forKey: "theme")
+        XCTAssertEqual(Settings(defaults: defaults).theme, .system)
+    }
+    func testThemeUsesSystemAppearanceWithoutChangingSystemSetting() {
+        XCTAssertNil(AppTheme.system.appearance)
+        XCTAssertEqual(AppTheme.light.appearance?.name, .aqua)
+        XCTAssertEqual(AppTheme.dark.appearance?.name, .darkAqua)
+    }
     func testCorruptAndDuplicateOrderPreservesEveryControl() {
         defaults.set(["awake", "unknown", "awake", "desktop"], forKey: "order")
         XCTAssertEqual(Array(settings.order.prefix(2)), ["awake", "desktop"])
@@ -110,6 +124,11 @@ final class OnecookTests: XCTestCase {
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
         XCTAssertEqual(controller.desiredHeight, 519)
     }
+    @MainActor func testSharedLabelsEnforceMinimumTextSize() {
+        XCTAssertEqual(label("Contact", size: 10).font?.pointSize, 14)
+        XCTAssertEqual(label("Title", size: 19).font?.pointSize, 19)
+        XCTAssertEqual(ActionButton(title: "Settings", handler: {}).font?.pointSize, 14)
+    }
     @MainActor func testPreferencesRoutingAndLocalizedControlSearch() throws {
         let controller = PreferencesController(settings: settings)
         let window = try XCTUnwrap(controller.window)
@@ -122,6 +141,7 @@ final class OnecookTests: XCTestCase {
             let search = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSSearchField }.first)
             let table = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSTableView }.first)
             XCTAssertEqual(table.numberOfRows, 31)
+            XCTAssertGreaterThanOrEqual(search.font?.pointSize ?? 0, 14)
             XCTAssertEqual(search.placeholderString, english ? "Search controls" : "搜索控制项")
             search.stringValue = "aily"
             list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))

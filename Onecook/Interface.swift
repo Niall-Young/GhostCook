@@ -1,5 +1,15 @@
 import AppKit
 
+extension AppTheme {
+    var appearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
 final class MenuActionItem: NSMenuItem {
     private let handler: () -> Void
     init(_ title: String, state: Bool = false, handler: @escaping () -> Void) {
@@ -14,7 +24,7 @@ final class ActionButton: NSButton {
     var handler: (() -> Void)?
     convenience init(title: String = "", symbol: String? = nil, handler: @escaping () -> Void) {
         self.init(frame: .zero)
-        self.title = title; self.handler = handler; target = self; action = #selector(invoke)
+        self.title = title; self.font = .systemFont(ofSize: 14); self.handler = handler; target = self; action = #selector(invoke)
         bezelStyle = title.isEmpty && symbol != nil ? .regularSquare : .recessed
         showsBorderOnlyWhileMouseInside = true
         if let symbol { image = NSImage(systemSymbolName: symbol, accessibilityDescription: title); imagePosition = title.isEmpty ? .imageOnly : .imageLeading }
@@ -39,9 +49,9 @@ final class ControlIconView: NSImageView {
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 }
 
-func label(_ text: String, size: CGFloat = NSFont.systemFontSize, color: NSColor = .labelColor, weight: NSFont.Weight = .regular) -> NSTextField {
+func label(_ text: String, size: CGFloat = 14, color: NSColor = .labelColor, weight: NSFont.Weight = .regular) -> NSTextField {
     let value = NSTextField(labelWithString: text)
-    value.font = .systemFont(ofSize: size, weight: weight); value.textColor = color
+    value.font = .systemFont(ofSize: max(14, size), weight: weight); value.textColor = color
     value.lineBreakMode = .byTruncatingTail
     return value
 }
@@ -118,7 +128,7 @@ final class ControlsViewController: NSViewController {
         let prefs = ActionButton(title: "", symbol: "slider.horizontal.3") { [weak self] in self?.onSettings?(0) }
         prefs.frame = NSRect(x: 14, y: 16, width: 34, height: 34); prefs.toolTip = settings.text("设置", "Settings"); prefs.setAccessibilityLabel(prefs.toolTip)
         let quit = ActionButton(title: "", symbol: "power") { [weak self] in self?.onQuit?() }
-        quit.frame = NSRect(x: 312, y: 16, width: 34, height: 34); quit.toolTip = settings.text("退出 Onecook", "Quit Onecook"); quit.setAccessibilityLabel(quit.toolTip)
+        quit.frame = NSRect(x: 312, y: 16, width: 34, height: 34); quit.toolTip = settings.text("退出 GhostCook", "Quit GhostCook"); quit.setAccessibilityLabel(quit.toolTip)
         [prefs, quit].forEach { footer.addSubview($0) }
         stack.addArrangedSubview(footer)
         updateStates(); onResize?()
@@ -147,7 +157,7 @@ final class ControlsViewController: NSViewController {
         let progress = NSProgressIndicator(frame: NSRect(x: 316, y: 20, width: 16, height: 16)); progress.style = .spinning; progress.controlSize = .small; progress.isDisplayedWhenStopped = false
         [icon, title, toggle, progress].forEach { row.addSubview($0) }
         if control.id == "ejectDisk" {
-            let menu = NSMenu(); menu.delegate = self; toggle.menu = menu
+            let menu = NSMenu(); menu.font = .systemFont(ofSize: 14); menu.delegate = self; toggle.menu = menu
             let press = NSPressGestureRecognizer(target: self, action: #selector(protectDisks(_:))); press.minimumPressDuration = 0.45; toggle.addGestureRecognizer(press)
         }
         rows[control.id] = (toggle, title, progress, icon)
@@ -176,7 +186,7 @@ final class ControlsViewController: NSViewController {
         if control.id == "resolution" { rows[control.id]?.0.state = .off; showResolutions(from: source); return }
         if control.isTimed && !store.state(control.id).enabled {
             rows[control.id]?.0.state = .off
-            let menu = NSMenu()
+            let menu = NSMenu(); menu.font = .systemFont(ofSize: 14)
             for (zh, en, seconds) in [("30 分钟", "30 minutes", 1800.0), ("1 小时", "1 hour", 3600.0), ("2 小时", "2 hours", 7200.0), ("4 小时", "4 hours", 14400.0)] {
                 menu.addItem(MenuActionItem(settings.text(zh, en)) { [weak self] in self?.store.perform(control, enabled: true, duration: seconds) })
             }
@@ -195,7 +205,7 @@ final class ControlsViewController: NSViewController {
                 "emptyTrash": ("废纸篓中的文件将被永久删除。", "Files in the Trash will be permanently deleted."),
                 "clearDownloads": ("将“下载”文件夹内的所有内容移到废纸篓。", "Move all Downloads contents to the Trash."),
                 "xcodeClean": ("将全部 Xcode 派生数据移到废纸篓。", "Move all Xcode derived data to the Trash."),
-                "quitApps": ("正常退出其他应用，保留当前应用、Onecook 与 Finder。", "Quit other apps normally, keeping your current app, Onecook and Finder."),
+                "quitApps": ("正常退出其他应用，保留当前应用、GhostCook 与 Finder。", "Quit other apps normally, keeping your current app, GhostCook and Finder."),
                 "ejectDisk": ("推出所有未受保护的外接磁盘与磁盘映像。", "Eject all unprotected external disks and disk images.")
             ]
             if let (zh, en) = details[control.id] { alert.informativeText = settings.text(zh, en) }
@@ -205,7 +215,7 @@ final class ControlsViewController: NSViewController {
         store.perform(control)
     }
     func showVolumes(from source: NSView) {
-        let menu = NSMenu(title: settings.text("受保护的磁盘", "Protected disks"))
+        let menu = NSMenu(title: settings.text("受保护的磁盘", "Protected disks")); menu.font = .systemFont(ofSize: 14)
         let title = NSMenuItem(title: menu.title, action: nil, keyEquivalent: ""); title.isEnabled = false; menu.addItem(title)
         let volumes = Volumes.inventory()
         if volumes.isEmpty { menu.addItem(withTitle: settings.text("当前没有可推出的磁盘", "No ejectable disks"), action: nil, keyEquivalent: "") }
@@ -219,11 +229,11 @@ final class ControlsViewController: NSViewController {
         popup(menu, from: source)
     }
     private func showResolutions(from source: NSView) {
-        let menu = NSMenu()
+        let menu = NSMenu(); menu.font = .systemFont(ofSize: 14)
         for screen in NSScreen.screens {
             guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { continue }
             let display = CGDirectDisplayID(number.uint32Value)
-            let submenu = NSMenu()
+            let submenu = NSMenu(); submenu.font = .systemFont(ofSize: 14)
             for choice in Displays.choices(for: display) {
                 let selected = CGDisplayCopyDisplayMode(display)?.ioDisplayModeID == choice.mode.ioDisplayModeID
                 submenu.addItem(MenuActionItem(choice.title, state: selected) { [weak self] in

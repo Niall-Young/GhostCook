@@ -1,6 +1,7 @@
-# Onecook
+# GhostCook
 
 - 本项目是独立的 Swift macOS 菜单栏应用，主面板使用 AppKit，设置使用系统 SwiftUI 侧栏与分组表单；不要引入 WebView、Tauri 或 Web UI。
+- 所有界面文字字号不得小于 14pt，包括正文、分组标题、辅助文字、版本信息和联系信息；禁止通过缩放文字规避，空间不足时换行或调整布局。
 - 主控制面板保持锚定菜单栏图标的 `NSPanel`；正常启动与再次打开应用时不自动弹出主面板，也不显示 Dock 图标。
 - macOS 26 及以上使用原生 `NSGlassEffectView`；macOS 13–25 使用 `NSVisualEffectView` 背景模糊，使用系统语义颜色与控件。
 - `project.yml` 是 XcodeGen 工程源配置。修改构建配置后运行 `xcodegen generate`，不要只修改生成的工程。

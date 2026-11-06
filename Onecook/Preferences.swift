@@ -38,14 +38,19 @@ private final class PreferencesModel: ObservableObject {
     @Published var english: Bool {
         didSet { if settings.english != english { settings.english = english } }
     }
+    @Published var theme: AppTheme {
+        didSet { if settings.theme != theme { settings.theme = theme } }
+    }
     @Published private var revision = 0
     private var observer: NSObjectProtocol?
     init(settings: Settings) {
         self.settings = settings
         english = settings.english
+        theme = settings.theme
         observer = NotificationCenter.default.addObserver(forName: .settingsChanged, object: settings, queue: .main) { [weak self] _ in
             guard let self else { return }
             self.english = settings.english
+            self.theme = settings.theme
             self.revision &+= 1
         }
     }
@@ -73,7 +78,7 @@ private struct PreferencesRoot: View {
             .listStyle(.sidebar)
             .modifier(FixedSettingsSidebar())
             .navigationSplitViewColumnWidth(min: 190, ideal: 200, max: 220)
-            .safeAreaInset(edge: .bottom, spacing: 0) { ContactCard().padding(12) }
+            .safeAreaInset(edge: .bottom, spacing: 0) { ContactCard(english: model.english).padding(12) }
         } detail: {
             Group {
                 if model.selectedPane == 1 {
@@ -85,6 +90,7 @@ private struct PreferencesRoot: View {
             .navigationTitle(model.selectedPane == 1 ? model.text("控制项", "Controls") : model.text("基础设置", "General"))
         }
         .navigationSplitViewStyle(.balanced)
+        .font(.system(size: 14))
     }
 }
 
@@ -108,33 +114,38 @@ private struct FixedSettingsSidebar: ViewModifier {
 }
 
 private struct ContactCard: View {
+    let english: Bool
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Niall Young").font(.system(size: 12, weight: .semibold))
-            Link(destination: URL(string: "mailto:niallyoung2002@gmail.com")!) {
-                Text("niallyoung2002@gmail.com")
-                    .font(.system(size: 10)).foregroundStyle(.secondary)
-                    .lineLimit(1).minimumScaleFactor(0.9)
-            }
-            Divider()
-            HStack {
-                profileLink("GitHub", url: "https://github.com/Niall-Young")
-                Spacer()
-                profileLink("X", url: "https://x.com/NiallxYoung")
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Niall Young")
+                .font(.system(size: 14, weight: .semibold))
+            VStack(alignment: .leading, spacing: 10) {
+                contactLink(english ? "Email" : "邮箱", icon: "ContactEmail", url: "mailto:niallyoung2002@gmail.com")
+                contactLink("GitHub", icon: "ContactGitHub", url: "https://github.com/Niall-Young")
+                contactLink("X/Twitter", icon: "ContactX", url: "https://x.com/NiallxYoung")
             }
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 4)
+        .padding(.bottom, 4)
     }
-    private func profileLink(_ title: String, url: String) -> some View {
+
+    private func contactLink(_ title: String, icon: String, url: String) -> some View {
         Link(destination: URL(string: url)!) {
-            HStack(spacing: 5) {
-                Text(title).font(.system(size: 11))
-                Image(systemName: "arrow.up.right").font(.system(size: 9, weight: .medium))
+            HStack(spacing: 10) {
+                Image(icon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .accessibilityHidden(true)
+                Text(title)
             }
-            .foregroundStyle(.primary)
+            .font(.system(size: 14))
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
         }
         .help(url)
     }
@@ -144,29 +155,38 @@ private struct GeneralPreferencesView: View {
     @ObservedObject var model: PreferencesModel
     var body: some View {
         Form {
-            Section(model.text("系统", "System")) {
+            Section {
                 Toggle(model.text("登录时启动", "Launch at login"), isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) }))
                     .toggleStyle(.switch)
                 Picker(model.text("语言", "Language"), selection: $model.english) {
                     Text("简体中文").tag(false)
                     Text("English").tag(true)
                 }
+                Picker(model.text("主题色", "Appearance"), selection: $model.theme) {
+                    Text(model.text("跟随系统", "System")).tag(AppTheme.system)
+                    Text(model.text("亮色", "Light")).tag(AppTheme.light)
+                    Text(model.text("暗色", "Dark")).tag(AppTheme.dark)
+                }
                 LabeledContent(model.text("辅助功能", "Accessibility")) {
                     Button(model.text("打开系统设置", "Open System Settings")) { SystemSettings.requestAccessibility() }
                 }
+            } header: {
+                Text(model.text("系统", "System")).font(.system(size: 14, weight: .semibold))
             }
-            Section(model.text("关于", "About")) {
+            Section {
                 HStack(spacing: 12) {
                     Image(nsImage: NSImage(named: NSImage.applicationIconName) ?? Brand.icon(size: 40))
                         .resizable().frame(width: 40, height: 40)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Onecook").font(.headline)
+                        Text("GhostCook").font(.system(size: 14, weight: .semibold))
                         Text(model.text("版本 ", "Version ") + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"))
-                            .font(.subheadline).foregroundStyle(.secondary)
+                            .font(.system(size: 14)).foregroundStyle(.secondary)
                     }
                     Spacer()
                 }
                 .padding(.vertical, 4)
+            } header: {
+                Text(model.text("关于", "About")).font(.system(size: 14, weight: .semibold))
             }
         }
         .formStyle(.grouped)
@@ -180,6 +200,31 @@ private struct ControlsPreferencesView: NSViewControllerRepresentable {
     func updateNSViewController(_ nsViewController: ControlListPreferences, context: Context) { nsViewController.refreshLanguage() }
 }
 
+private final class ControlsSearchFieldCell: NSSearchFieldCell {
+    override func searchTextRect(forBounds rect: NSRect) -> NSRect {
+        let content = rect.insetBy(dx: 0, dy: max(0, (rect.height - 24) / 2))
+        return super.searchTextRect(forBounds: content)
+    }
+
+    private func bezelPath(in frame: NSRect) -> NSBezierPath {
+        NSBezierPath(roundedRect: frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 6, yRadius: 6)
+    }
+
+    override func draw(withFrame frame: NSRect, in controlView: NSView) {
+        let path = bezelPath(in: frame)
+        NSColor.textBackgroundColor.setFill()
+        path.fill()
+        NSColor.separatorColor.setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        super.drawInterior(withFrame: frame, in: controlView)
+    }
+
+    override func drawFocusRingMask(withFrame cellFrame: NSRect, in controlView: NSView) {
+        bezelPath(in: cellFrame).fill()
+    }
+}
+
 final class ControlListPreferences: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
     let settings: Settings
     private let table = NSTableView()
@@ -190,7 +235,13 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 449, height: 512))
+        search.cell = ControlsSearchFieldCell(textCell: "")
+        search.isEditable = true
+        search.isSelectable = true
+        search.cell?.usesSingleLineMode = true
+        search.cell?.isScrollable = true
         search.controlSize = .regular
+        search.font = .systemFont(ofSize: 14)
         search.placeholderString = settings.text("搜索控制项", "Search controls")
         search.delegate = self
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("control"))
@@ -227,7 +278,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         group.layer?.masksToBounds = true
         for child in [search, group, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 24),
+            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 32),
             group.leadingAnchor.constraint(equalTo: search.leadingAnchor), group.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor, constant: -4), group.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 16), group.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             scroll.leadingAnchor.constraint(equalTo: group.leadingAnchor, constant: 4), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4), scroll.topAnchor.constraint(equalTo: group.topAnchor, constant: 4), scroll.bottomAnchor.constraint(equalTo: group.bottomAnchor, constant: -4)
         ])
@@ -251,7 +302,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         let control = items[row]
         let cell = NSTableCellView()
         let icon = NSImageView(); icon.image = NSImage(systemSymbolName: control.symbol, accessibilityDescription: nil); icon.contentTintColor = .secondaryLabelColor
-        let title = label(settings.english ? control.en : control.zh, size: 13)
+        let title = label(settings.english ? control.en : control.zh, size: 14)
         let accessory: NSView
         let check = NSButton(checkboxWithTitle: "", target: nil, action: nil); check.controlSize = .mini; check.state = settings.visible.contains(control.id) ? .on : .off
         check.setAccessibilityLabel(settings.english ? control.en : control.zh)
