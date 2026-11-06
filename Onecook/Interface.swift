@@ -29,24 +29,14 @@ final class ControlSwitch: NSSwitch {
 }
 final class FlippedView: NSView { override var isFlipped: Bool { true } }
 
-final class ControlIconView: NSView {
-    let imageView = NSImageView()
+final class ControlIconView: NSImageView {
     init(symbol: String) {
-        super.init(frame: NSRect(x: 14, y: 10.5, width: 34, height: 34))
-        imageView.frame = NSRect(x: 6, y: 6, width: 22, height: 22)
-        imageView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-        imageView.contentTintColor = .secondaryLabelColor
-        addSubview(imageView)
+        super.init(frame: NSRect(x: 19, y: 15.5, width: 24, height: 24))
+        image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        imageScaling = .scaleProportionallyUpOrDown
+        contentTintColor = .secondaryLabelColor
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-    override func draw(_ dirtyRect: NSRect) {
-        NSColor.textBackgroundColor.setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: 8, yRadius: 8).fill()
-    }
-    override func viewDidChangeEffectiveAppearance() {
-        super.viewDidChangeEffectiveAppearance()
-        needsDisplay = true
-    }
 }
 
 func label(_ text: String, size: CGFloat = NSFont.systemFontSize, color: NSColor = .labelColor, weight: NSFont.Weight = .regular) -> NSTextField {
@@ -162,7 +152,7 @@ final class ControlsViewController: NSViewController {
         for control in settings.selectedControls {
             guard let (toggle, title, progress, icon) = rows[control.id] else { continue }
             let state = store.state(control.id)
-            icon.imageView.contentTintColor = state.enabled
+            icon.contentTintColor = state.enabled
                 ? NSColor.systemBlue.blended(withFraction: 0.35, of: .labelColor)
                 : .secondaryLabelColor
             toggle.state = state.busy || state.enabled ? .on : .off
