@@ -1,0 +1,53 @@
+name: Onecook
+options:
+  bundleIdPrefix: dev.nialyoung
+  deploymentTarget:
+    macOS: '13.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    MACOSX_DEPLOYMENT_TARGET: '13.0'
+    CODE_SIGN_IDENTITY: '-'
+    CODE_SIGN_STYLE: Manual
+    ENABLE_HARDENED_RUNTIME: YES
+    ENABLE_DEBUG_DYLIB: NO
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_LSUIElement: YES
+    INFOPLIST_KEY_NSAppleEventsUsageDescription: Onecook 需要控制你选择的应用和系统设置
+    INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: Onecook 需要连接你选择的蓝牙耳机
+    INFOPLIST_KEY_NSFocusStatusUsageDescription: Onecook 需要读取专注模式状态
+    MARKETING_VERSION: '0.1.0'
+    CURRENT_PROJECT_VERSION: '1'
+targets:
+  Onecook:
+    type: application
+    platform: macOS
+    sources: [Onecook]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook
+        PRODUCT_NAME: Onecook
+        INFOPLIST_KEY_CFBundleDisplayName: Onecook
+    dependencies:
+      - sdk: AppKit.framework
+      - sdk: Carbon.framework
+      - sdk: IOKit.framework
+      - sdk: IOBluetooth.framework
+      - sdk: Intents.framework
+  OnecookTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [Tests]
+    dependencies:
+      - target: Onecook
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook.tests
+schemes:
+  Onecook:
+    build:
+      targets:
+        Onecook: all
+        OnecookTests: [test]
+    test:
+      targets: [OnecookTests]
