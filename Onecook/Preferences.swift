@@ -210,6 +210,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
+        scroll.scrollerStyle = .legacy
         scroll.drawsBackground = false
         scroll.documentView = table
         scroll.automaticallyAdjustsContentInsets = false
@@ -224,11 +225,11 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         group.wantsLayer = true
         group.layer?.cornerRadius = 12
         group.layer?.masksToBounds = true
-        fill(scroll, in: group.contentView!, inset: 4)
-        for child in [search, group] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        for child in [search, group, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
             search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 24),
-            group.leadingAnchor.constraint(equalTo: search.leadingAnchor), group.trailingAnchor.constraint(equalTo: search.trailingAnchor), group.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 16), group.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20)
+            group.leadingAnchor.constraint(equalTo: search.leadingAnchor), group.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor, constant: -4), group.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 16), group.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+            scroll.leadingAnchor.constraint(equalTo: group.leadingAnchor, constant: 4), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4), scroll.topAnchor.constraint(equalTo: group.topAnchor, constant: 4), scroll.bottomAnchor.constraint(equalTo: group.bottomAnchor, constant: -4)
         ])
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: .settingsChanged, object: nil)
     }
