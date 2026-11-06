@@ -203,10 +203,25 @@ private struct ControlsPreferencesView: NSViewControllerRepresentable {
     func updateNSViewController(_ nsViewController: ControlListPreferences, context: Context) { nsViewController.refreshLanguage() }
 }
 
+private final class ControlsSearchField: NSSearchField {
+    static let cornerRadius: CGFloat = 12
+
+    override func draw(_ dirtyRect: NSRect) {
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
+                                xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
+        NSColor.textBackgroundColor.setFill()
+        path.fill()
+        NSColor.separatorColor.setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        cell?.drawInterior(withFrame: bounds, in: self)
+    }
+}
+
 final class ControlListPreferences: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
     let settings: Settings
     private let table = NSTableView()
-    private let search = NSSearchField()
+    private let search = ControlsSearchField()
     private let dragType = NSPasteboard.PasteboardType("dev.nialyoung.onecook.control")
     private var items: [Control] { settings.controls.filter { search.stringValue.isEmpty || $0.zh.localizedCaseInsensitiveContains(search.stringValue) || $0.en.localizedCaseInsensitiveContains(search.stringValue) } }
     init(settings: Settings) { self.settings = settings; super.init(nibName: nil, bundle: nil) }
@@ -243,12 +258,12 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         group.boxType = .custom
         group.titlePosition = .noTitle
         group.borderWidth = 0
-        group.cornerRadius = 12
+        group.cornerRadius = ControlsSearchField.cornerRadius
         group.contentViewMargins = .zero
         if #available(macOS 14, *) { group.fillColor = .quaternarySystemFill }
         else { group.fillColor = .controlBackgroundColor }
         group.wantsLayer = true
-        group.layer?.cornerRadius = 12
+        group.layer?.cornerRadius = ControlsSearchField.cornerRadius
         group.layer?.masksToBounds = true
         for child in [search, group, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
