@@ -1,17 +1,40 @@
 import AppKit
 import ApplicationServices
 
-// A single switch silhouette, shared by the menu bar and the app's brand mark.
+// Monochrome version of the GhostCook logo for system template rendering.
 enum Brand {
     static func icon(size: CGFloat) -> NSImage {
-        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
-            let capsule = NSRect(x: rect.width * 0.06, y: rect.height * 0.25, width: rect.width * 0.88, height: rect.height * 0.5)
-            NSColor.labelColor.setStroke()
-            let outline = NSBezierPath(roundedRect: capsule, xRadius: capsule.height / 2, yRadius: capsule.height / 2)
-            outline.lineWidth = max(1.3, size * 0.055); outline.stroke()
-            NSColor.labelColor.setFill()
-            let diameter = capsule.height * 0.66
-            NSBezierPath(ovalIn: NSRect(x: capsule.maxX - diameter - capsule.height * 0.17, y: capsule.midY - diameter / 2, width: diameter, height: diameter)).fill()
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: true) { _ in
+            let transform = NSAffineTransform()
+            transform.scale(by: size / 100)
+            transform.concat()
+
+            let ghost = NSBezierPath()
+            ghost.move(to: NSPoint(x: 50, y: 6))
+            ghost.curve(to: NSPoint(x: 87, y: 51), controlPoint1: NSPoint(x: 76, y: 6), controlPoint2: NSPoint(x: 87, y: 26))
+            ghost.curve(to: NSPoint(x: 95, y: 78), controlPoint1: NSPoint(x: 87, y: 65), controlPoint2: NSPoint(x: 91, y: 70))
+            ghost.curve(to: NSPoint(x: 82, y: 87), controlPoint1: NSPoint(x: 101, y: 90), controlPoint2: NSPoint(x: 91, y: 94))
+            ghost.curve(to: NSPoint(x: 71, y: 87), controlPoint1: NSPoint(x: 77, y: 83), controlPoint2: NSPoint(x: 75, y: 82))
+            ghost.curve(to: NSPoint(x: 58, y: 92), controlPoint1: NSPoint(x: 66, y: 95), controlPoint2: NSPoint(x: 63, y: 97))
+            ghost.curve(to: NSPoint(x: 46, y: 90), controlPoint1: NSPoint(x: 52, y: 86), controlPoint2: NSPoint(x: 52, y: 85))
+            ghost.curve(to: NSPoint(x: 31, y: 92), controlPoint1: NSPoint(x: 39, y: 98), controlPoint2: NSPoint(x: 33, y: 98))
+            ghost.curve(to: NSPoint(x: 23, y: 83), controlPoint1: NSPoint(x: 28, y: 86), controlPoint2: NSPoint(x: 29, y: 80))
+            ghost.curve(to: NSPoint(x: 6, y: 81), controlPoint1: NSPoint(x: 11, y: 90), controlPoint2: NSPoint(x: 4, y: 88))
+            ghost.curve(to: NSPoint(x: 14, y: 54), controlPoint1: NSPoint(x: 6, y: 74), controlPoint2: NSPoint(x: 13, y: 68))
+            ghost.curve(to: NSPoint(x: 50, y: 6), controlPoint1: NSPoint(x: 14, y: 28), controlPoint2: NSPoint(x: 27, y: 6))
+            ghost.close()
+
+            // Transparent facial cutouts remain visible in both menu bar appearances.
+            ghost.appendOval(in: NSRect(x: 37, y: 37, width: 10, height: 16))
+            ghost.appendOval(in: NSRect(x: 65, y: 37, width: 10, height: 16))
+            ghost.move(to: NSPoint(x: 50, y: 51))
+            ghost.curve(to: NSPoint(x: 62, y: 51), controlPoint1: NSPoint(x: 54, y: 52), controlPoint2: NSPoint(x: 58, y: 52))
+            ghost.curve(to: NSPoint(x: 56, y: 61), controlPoint1: NSPoint(x: 63, y: 55), controlPoint2: NSPoint(x: 60, y: 61))
+            ghost.curve(to: NSPoint(x: 50, y: 51), controlPoint1: NSPoint(x: 52, y: 61), controlPoint2: NSPoint(x: 49, y: 55))
+            ghost.close()
+            ghost.windingRule = .evenOdd
+            NSColor.black.setFill()
+            ghost.fill()
             return true
         }
         image.isTemplate = true
