@@ -34,7 +34,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app
 
 ### 使用方法
 
-点击菜单栏单开关图标打开控制面板。底栏可打开设置、自定义或退出。超过 8 项时列表保持固定高度并滚动。辅助功能仅在引导或对应控制操作时申请；自动化、蓝牙与专注状态权限按系统要求处理。
+点击菜单栏单开关图标打开控制面板。底栏可打开设置或退出。超过 8 项时列表保持固定高度并滚动。辅助功能仅在引导或对应控制操作时申请；自动化、蓝牙与专注状态权限按系统要求处理。
 
 在自定义页勾选并拖动调整控制项；推出磁盘开关支持长按或右键打开保护名单。
 
@@ -90,7 +90,7 @@ Alternatively, open `Onecook.xcodeproj` and run the Onecook scheme. `project.yml
 
 ### Usage
 
-Click the single-switch menu bar icon. The footer opens Settings, Customise or Quit. More than eight controls scroll within a fixed-height list. Accessibility is requested through onboarding or related controls; automation, Bluetooth and Focus permissions follow macOS requirements.
+Click the single-switch menu bar icon. The footer opens Settings or Quit. More than eight controls scroll within a fixed-height list. Accessibility is requested through onboarding or related controls; automation, Bluetooth and Focus permissions follow macOS requirements.
 
 Select and drag controls in Customise. Long-press or right-click the eject switch to manage protected disks.
 

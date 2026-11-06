@@ -105,11 +105,9 @@ final class ControlsViewController: NSViewController {
         let footer = NSView(); footer.heightAnchor.constraint(equalToConstant: 58).isActive = true
         let prefs = ActionButton(title: "", symbol: "slider.horizontal.3") { [weak self] in self?.onSettings?(0) }
         prefs.frame = NSRect(x: 14, y: 12, width: 34, height: 34); prefs.toolTip = settings.text("设置", "Settings"); prefs.setAccessibilityLabel(prefs.toolTip)
-        let customise = ActionButton(title: settings.text("自定义", "Customise")) { [weak self] in self?.onSettings?(1) }
-        customise.frame = NSRect(x: 130, y: 12, width: 100, height: 34)
         let quit = ActionButton(title: "", symbol: "power") { [weak self] in self?.onQuit?() }
         quit.frame = NSRect(x: 312, y: 12, width: 34, height: 34); quit.toolTip = settings.text("退出 Onecook", "Quit Onecook"); quit.setAccessibilityLabel(quit.toolTip)
-        [prefs, customise, quit].forEach { footer.addSubview($0) }
+        [prefs, quit].forEach { footer.addSubview($0) }
         stack.addArrangedSubview(footer)
         updateStates(); onResize?()
     }
