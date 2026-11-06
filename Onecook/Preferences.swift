@@ -204,8 +204,20 @@ private struct ControlsPreferencesView: NSViewControllerRepresentable {
 }
 
 private final class ControlsSearchFieldCell: NSSearchFieldCell {
+    private func contentBounds(_ rect: NSRect) -> NSRect {
+        rect.insetBy(dx: 8, dy: max(0, (rect.height - 28) / 2))
+    }
+
     override func searchTextRect(forBounds rect: NSRect) -> NSRect {
-        super.searchTextRect(forBounds: rect.insetBy(dx: 0, dy: max(0, (rect.height - 28) / 2)))
+        super.searchTextRect(forBounds: contentBounds(rect))
+    }
+
+    override func searchButtonRect(forBounds rect: NSRect) -> NSRect {
+        super.searchButtonRect(forBounds: contentBounds(rect))
+    }
+
+    override func cancelButtonRect(forBounds rect: NSRect) -> NSRect {
+        super.cancelButtonRect(forBounds: contentBounds(rect))
     }
 }
 
@@ -225,8 +237,7 @@ private final class ControlsSearchField: NSSearchField {
         NSColor.separatorColor.setStroke()
         path.lineWidth = 1
         path.stroke()
-        let content = bounds.insetBy(dx: 0, dy: max(0, (bounds.height - 28) / 2))
-        cell?.drawInterior(withFrame: content, in: self)
+        cell?.drawInterior(withFrame: bounds, in: self)
     }
 }
 
