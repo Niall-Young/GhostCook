@@ -30,7 +30,7 @@ Swift + AppKit 原生 macOS 菜单栏工具，参考 [OneTouch](https://github.c
 open build/DerivedData/Build/Products/Debug/Onecook.app
 ```
 
-也可打开 `Onecook.xcodeproj`，选择 Onecook scheme 运行。工程源配置为 `project.yml`。构建使用 `Developer ID Application: Niall Young (V8GVW783CK)` 签名，需要钥匙串中存在对应证书及私钥。
+也可打开 `Onecook.xcodeproj`，选择 Onecook scheme 运行。工程源配置为 `project.yml`。默认使用本机 ad-hoc 签名；可在本地工程配置中选择自己的签名身份。
 
 ### 使用方法
 
@@ -57,7 +57,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app --args --show-controls
 - 夜览和原彩显示使用经过运行时检查的可选 CoreBrightness 客户端；它们属于非公开系统接口，可能因系统或硬件变化不可用。专注与电源模式通过辅助功能操作系统控制中心，对应控制项需要显示在菜单栏，其标识可能随系统版本改变。
 - 无耳机、未安装 Spotify/aily 或不支持的硬件不伪造可用状态。蓝牙连接、电源模式、磁盘推出、键盘拦截与授权流程仍需要对应硬件及系统权限验收。尚未在旧版 macOS 上实机验证模糊回退。
 - 飞书 aily 需要 `~/.aily-cli/bin/aily-cli`；启动通过临时 launchd 任务运行，不安装登录任务，退出 Onecook 不会停止服务。
-- 当前构建使用 Developer ID 签名，尚未进行 Apple 公证；从原有 ad-hoc 签名切换后可能需要重新授权辅助功能。独立版本不复用上游的 Tauri 自动更新安装链。
+- 当前提供本机 Debug 构建，签名由本地工程配置决定，未做公证；重新签名可能需要重新授权辅助功能。独立版本不复用上游的 Tauri 自动更新安装链。
 - 正常退出会释放唤醒断言、屏幕清洁和键盘拦截，并尝试关闭定时控制；关闭失败的截止时间保留，下次启动重试。
 
 <a id="english"></a>
@@ -86,7 +86,7 @@ Requires macOS 13+, Xcode with a macOS 26+ SDK, and XcodeGen. Scripts default to
 open build/DerivedData/Build/Products/Debug/Onecook.app
 ```
 
-Alternatively, open `Onecook.xcodeproj` and run the Onecook scheme. `project.yml` is the source build configuration. Builds use `Developer ID Application: Niall Young (V8GVW783CK)` and require the matching certificate and private key in Keychain.
+Alternatively, open `Onecook.xcodeproj` and run the Onecook scheme. `project.yml` is the source build configuration. The default build uses local ad-hoc signing; select your own signing identity in the local project configuration if needed.
 
 ### Usage
 
@@ -113,5 +113,5 @@ open build/DerivedData/Build/Products/Debug/Onecook.app --args --show-controls
 - Night Shift and True Tone use optional runtime-checked CoreBrightness clients. These non-public system interfaces may be unavailable on different hardware or macOS versions. Focus and power modes operate system Control Center through Accessibility; the corresponding items must appear in the menu bar, and their identifiers may change between releases.
 - Missing headphones, Spotify/aily installations or unsupported hardware never produce invented availability. Bluetooth connection, power modes, disk eject, keyboard interception and permission flows still require hardware and permission acceptance. The blur fallback has not been tested on an older macOS installation.
 - Feishu aily requires `~/.aily-cli/bin/aily-cli`. Startup uses a temporary launchd job without installing a login job. Quitting Onecook leaves the daemon running.
-- Builds use Developer ID signing and have not been notarized by Apple. Switching from the previous ad-hoc signature may require Accessibility authorization again. This independent version does not reuse the upstream Tauri update installer.
+- This is a local Debug build whose signing follows the local project configuration, without notarization. Re-signing may require Accessibility authorization again. This independent version does not reuse the upstream Tauri update installer.
 - Normal exit releases wake assertions, screen cleaning and keyboard interception, and attempts to turn off timed controls. Failed deadlines remain saved for retry on the next launch.
