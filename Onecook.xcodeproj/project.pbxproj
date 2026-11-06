@@ -8,13 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		0A58F58CB4E8AF0DFEB84297 /* SystemSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 150A6A63DE18D92705AA7BE9 /* SystemSupport.swift */; };
-		20F40873B9D99F2D639FD060 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 7C6AADE5A390D0259D63109C /* AppIcon.icns */; };
 		2D923D5905D9028F533D3113 /* Devices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6894DF376816F2D596664885 /* Devices.swift */; };
 		3F4F7FDE02703BF266B76A37 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA16245512262DBF75A7A50C /* Model.swift */; };
 		4F77E6BE3F84141562F61705 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EF854241D4A807A6E28DFA /* AppDelegate.swift */; };
 		52BB18196D43986A9B09DB50 /* AilyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC8B9597AC405476C6FB351D /* AilyService.swift */; };
 		5950B41BDCD0EB752335FC2E /* CleaningController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F0FDE7A3D1BA11DA1BEB6C /* CleaningController.swift */; };
 		60477E2CC95A05C30560575E /* Intents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB85E551CC8DE8C91BA68206 /* Intents.framework */; };
+		6C340C09A0BC010A14F7C9DC /* GhostCook.icon in Resources */ = {isa = PBXBuildFile; fileRef = 24BDD06B45B70396F558C727 /* GhostCook.icon */; };
 		81AE929E4BDFFBA68F957FD6 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F78E35F8C88F1E78B037E4D /* Preferences.swift */; };
 		A9F386BCBCFE1C0E583CC2C3 /* IOBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F642B736BA3B1BD1F2D0A18 /* IOBluetooth.framework */; };
 		B505640B04F2656C7198F7CF /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39C8BC346DD8A13744E39EFC /* AppKit.framework */; };
@@ -38,6 +38,7 @@
 /* Begin PBXFileReference section */
 		10D191DD1D851DC3B904A579 /* Interface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Interface.swift; sourceTree = "<group>"; };
 		150A6A63DE18D92705AA7BE9 /* SystemSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSupport.swift; sourceTree = "<group>"; };
+		24BDD06B45B70396F558C727 /* GhostCook.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = GhostCook.icon; sourceTree = "<group>"; };
 		2F78E35F8C88F1E78B037E4D /* Preferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preferences.swift; sourceTree = "<group>"; };
 		39C8BC346DD8A13744E39EFC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		3F642B736BA3B1BD1F2D0A18 /* IOBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOBluetooth.framework; path = System/Library/Frameworks/IOBluetooth.framework; sourceTree = SDKROOT; };
@@ -49,7 +50,6 @@
 		6894DF376816F2D596664885 /* Devices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Devices.swift; sourceTree = "<group>"; };
 		6E5052FCE8894BEF6C144346 /* OnecookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnecookTests.swift; sourceTree = "<group>"; };
 		7132F8AD3B28873CAAD6FB27 /* Onecook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Onecook.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7C6AADE5A390D0259D63109C /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		8D4F3840DA04022E11989330 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		AC8B9597AC405476C6FB351D /* AilyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AilyService.swift; sourceTree = "<group>"; };
 		EB85E551CC8DE8C91BA68206 /* Intents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Intents.framework; path = System/Library/Frameworks/Intents.framework; sourceTree = SDKROOT; };
@@ -94,7 +94,7 @@
 		64672965B49D4A46A9204AF8 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				7C6AADE5A390D0259D63109C /* AppIcon.icns */,
+				24BDD06B45B70396F558C727 /* GhostCook.icon */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -221,7 +221,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				20F40873B9D99F2D639FD060 /* AppIcon.icns in Resources */,
+				6C340C09A0BC010A14F7C9DC /* GhostCook.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,7 +351,7 @@
 		99F8F95C37D4CED1D29AE016 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = GhostCook;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Onecook/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Onecook;
@@ -442,7 +442,7 @@
 		F5EFCC1C94B40026D064B682 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = GhostCook;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Onecook/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Onecook;

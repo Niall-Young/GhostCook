@@ -11,7 +11,7 @@ Swift + AppKit 原生 macOS 菜单栏工具，参考 [OneTouch](https://github.c
 
 独立的原生实现，主面板使用 AppKit，设置使用 SwiftUI，不依赖 React、Tauri、Rust 或 WebView。主面板使用系统菜单栏状态项与无箭头 `NSPanel`，正常启动不弹出控制窗口，不显示 Dock 图标。
 
-参考版本：OneTouch `ba2c9d7eb9502ae2964408457a0c480903694421`。本项目使用独立标识 `dev.nialyoung.onecook` 和独立偏好数据，不修改 OneTouch 的配置。应用图标沿用参考仓库的 `src-tauri/icons/icon.icns`；上游未附许可证，公开分发前需确认图标与参考内容的使用授权。
+参考版本：OneTouch `ba2c9d7eb9502ae2964408457a0c480903694421`。本项目使用独立标识 `dev.nialyoung.onecook` 和独立偏好数据，不修改 OneTouch 的配置。应用图标使用提供的 Icon Composer 原文件 `Onecook/Resources/GhostCook.icon`，构建时生成系统图标与旧版 macOS 所需资源。参考仓库未附许可证，公开分发前需确认参考内容的使用授权。
 
 ### 核心能力
 
@@ -69,7 +69,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app --args --show-controls
 
 An independent native implementation with an AppKit menu panel and SwiftUI settings, inspired by [OneTouch](https://github.com/Cherry-Yiran/OneTouch), without React, Tauri, Rust or WebView. A system status item opens an arrowless `NSPanel`; normal launch does not show the panel or a Dock icon.
 
-Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate identifier `dev.nialyoung.onecook` and preference domain leave OneTouch settings untouched. The app icon comes from the reference repository’s `src-tauri/icons/icon.icns`. No upstream license was included; confirm rights to the icon and reference content before public distribution.
+Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate identifier `dev.nialyoung.onecook` and preference domain leave OneTouch settings untouched. The app icon uses the supplied Icon Composer source `Onecook/Resources/GhostCook.icon`; the build generates the system icon and resources for older macOS versions. No upstream license was included; confirm rights to reference content before public distribution.
 
 ### Features
 

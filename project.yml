@@ -26,13 +26,13 @@ targets:
     info:
       path: Onecook/Info.plist
       properties:
-        CFBundleIconFile: AppIcon
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook
         PRODUCT_NAME: Onecook
+        ASSETCATALOG_COMPILER_APPICON_NAME: GhostCook
         INFOPLIST_KEY_CFBundleDisplayName: Onecook
     dependencies:
       - sdk: AppKit.framework
