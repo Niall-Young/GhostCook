@@ -28,6 +28,26 @@ final class ControlSwitch: NSSwitch {
 }
 final class FlippedView: NSView { override var isFlipped: Bool { true } }
 
+final class ControlIconView: NSView {
+    let imageView = NSImageView()
+    init(symbol: String) {
+        super.init(frame: NSRect(x: 14, y: 10.5, width: 34, height: 34))
+        imageView.frame = NSRect(x: 6, y: 6, width: 22, height: 22)
+        imageView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        imageView.contentTintColor = .secondaryLabelColor
+        addSubview(imageView)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.quaternaryLabelColor.setFill()
+        NSBezierPath(roundedRect: bounds, xRadius: 8, yRadius: 8).fill()
+    }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+}
+
 func label(_ text: String, size: CGFloat = NSFont.systemFontSize, color: NSColor = .labelColor, weight: NSFont.Weight = .regular) -> NSTextField {
     let value = NSTextField(labelWithString: text)
     value.font = .systemFont(ofSize: size, weight: weight); value.textColor = color
@@ -57,7 +77,7 @@ final class ControlsViewController: NSViewController {
     var onResize: (() -> Void)?
     var onQuit: (() -> Void)?
     private var host: NSView!
-    private var rows: [String: (ControlSwitch, NSTextField, NSProgressIndicator)] = [:]
+    private var rows: [String: (ControlSwitch, NSTextField, NSProgressIndicator, ControlIconView)] = [:]
     private var secondaryMenus: [NSMenu] = []
     private let topPadding: CGFloat = 12
     var desiredHeight: CGFloat { topPadding + 59 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
@@ -120,8 +140,8 @@ final class ControlsViewController: NSViewController {
     }
     private func makeRow(_ control: Control, y: CGFloat) -> NSView {
         let row = FlippedView(frame: NSRect(x: 0, y: y, width: 360, height: 55)); row.autoresizingMask = [.width]
-        let icon = NSImageView(frame: NSRect(x: 16, y: 16, width: 22, height: 22)); icon.image = NSImage(systemSymbolName: control.symbol, accessibilityDescription: nil); icon.contentTintColor = .secondaryLabelColor
-        let title = label(settings.english ? control.en : control.zh); title.frame = NSRect(x: 50, y: 18, width: 242, height: 18)
+        let icon = ControlIconView(symbol: control.symbol)
+        let title = label(settings.english ? control.en : control.zh); title.frame = NSRect(x: 60, y: 18, width: 232, height: 18)
         let toggle = ControlSwitch(frame: NSRect(x: 306, y: 16, width: 38, height: 24)); toggle.setAccessibilityLabel(title.stringValue)
         toggle.handler = { [weak self, weak toggle] in guard let self, let toggle else { return }; self.activate(control, from: toggle) }
         let progress = NSProgressIndicator(frame: NSRect(x: 316, y: 20, width: 16, height: 16)); progress.style = .spinning; progress.controlSize = .small; progress.isDisplayedWhenStopped = false
@@ -130,7 +150,7 @@ final class ControlsViewController: NSViewController {
             let menu = NSMenu(); menu.delegate = self; toggle.menu = menu
             let press = NSPressGestureRecognizer(target: self, action: #selector(protectDisks(_:))); press.minimumPressDuration = 0.45; toggle.addGestureRecognizer(press)
         }
-        rows[control.id] = (toggle, title, progress)
+        rows[control.id] = (toggle, title, progress, icon)
         return row
     }
     @objc private func protectDisks(_ gesture: NSPressGestureRecognizer) {
@@ -138,8 +158,9 @@ final class ControlsViewController: NSViewController {
     }
     @objc func updateStates() {
         for control in settings.selectedControls {
-            guard let (toggle, title, progress) = rows[control.id] else { continue }
+            guard let (toggle, title, progress, icon) = rows[control.id] else { continue }
             let state = store.state(control.id)
+            icon.imageView.contentTintColor = state.enabled ? .systemBlue : .secondaryLabelColor
             toggle.state = state.busy || state.enabled ? .on : .off
             toggle.isEnabled = state.available && !state.busy
             toggle.isHidden = state.busy
