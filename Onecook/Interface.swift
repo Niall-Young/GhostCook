@@ -160,7 +160,9 @@ final class ControlsViewController: NSViewController {
         for control in settings.selectedControls {
             guard let (toggle, title, progress, icon) = rows[control.id] else { continue }
             let state = store.state(control.id)
-            icon.imageView.contentTintColor = state.enabled ? .systemBlue : .secondaryLabelColor
+            icon.imageView.contentTintColor = state.enabled
+                ? NSColor.systemBlue.blended(withFraction: 0.35, of: .labelColor)
+                : .secondaryLabelColor
             toggle.state = state.busy || state.enabled ? .on : .off
             toggle.isEnabled = state.available && !state.busy
             toggle.isHidden = state.busy
