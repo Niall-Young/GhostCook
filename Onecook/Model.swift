@@ -9,7 +9,7 @@ struct Control: Identifiable {
     let detailEN: String
     var isAction: Bool { Self.actions.contains(id) }
     var isTimed: Bool { ["awake", "darkMode", "dnd"].contains(id) }
-    var needsConfirmation: Bool { ["xcodeClean", "emptyTrash", "clearDownloads", "quitApps", "ejectDisk"].contains(id) }
+    var needsConfirmation: Bool { ["xcodeClean", "quitApps", "ejectDisk"].contains(id) }
     private static let actions: Set<String> = ["screenSaver", "frontApp", "xcodeClean", "emptyTrash", "clearDownloads", "ejectDisk", "clipboard", "hideWindow", "displaySleep", "lockScreen", "quitApps"]
     static let all: [Control] = [
         Control(id: "desktop", symbol: "square.grid.3x3", zh: "隐藏桌面图标", en: "Hide desktop icons", detailZH: "Finder", detailEN: "Finder"),
@@ -116,5 +116,6 @@ struct ControlState {
     var available = true
     var known = true
     var busy = false
+    var completedAt: Date?
     var message: String?
 }

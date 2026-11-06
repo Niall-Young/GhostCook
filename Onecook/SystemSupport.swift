@@ -38,8 +38,8 @@ enum Command {
         guard acceptedExitCodes.contains(process.terminationStatus) else { throw OperationError(error.isEmpty ? "macOS 拒绝了此操作 / macOS rejected the operation" : error) }
         return result
     }
-    @discardableResult static func script(_ script: String) throws -> String {
-        try run("/usr/bin/osascript", ["-e", script])
+    @discardableResult static func script(_ script: String, timeout: TimeInterval = 20) throws -> String {
+        try run("/usr/bin/osascript", ["-e", script], timeout: timeout)
     }
     static func bool(_ domain: String, _ key: String, fallback: Bool = false) -> Bool {
         guard let text = try? run("/usr/bin/defaults", ["read", domain, key], timeout: 3) else { return fallback }

@@ -41,7 +41,7 @@
 - macOS 26 及以上使用 `NSGlassEffectView` 原生液态玻璃；macOS 13–25 使用 `NSVisualEffectView` 背景模糊。
 - 设置窗口使用系统 SwiftUI 侧栏与分组表单：基础设置整合语言、主题色（跟随系统 / 亮色 / 暗色）、登录启动、权限与关于；控制项支持搜索、勾选与拖动排序。侧边栏底部直接展示作者邮箱、GitHub 和 X 联系入口；界面文字不小于 14pt。
 - 唤醒、深色与专注模式支持定时；偏好、定时截止时间与磁盘保护在本机保存。
-- 清理下载和 Xcode 派生数据移入废纸篓；清空废纸篓会永久删除其中内容。清理、推出磁盘与退出其他应用先确认。
+- 清理下载和 Xcode 派生数据移入废纸篓；清空废纸篓会永久删除其中内容。下载与废纸篓点击后直接执行；Xcode 缓存清理、推出磁盘与退出其他应用先确认。废纸篓清空在独立后台队列运行，最长等待一小时，期间显示进度并禁止重复执行，不阻塞其他系统控制。
 
 联系入口的 SVG 图标来自 [Simple Icons](https://github.com/simple-icons/simple-icons)（GitHub、X，CC0）与 [Lucide](https://lucide.dev/icons/mail)（邮箱，ISC）；许可随应用资源保留。
 
@@ -60,7 +60,7 @@ open build/DerivedData/Build/Products/Debug/GhostCook.app
 
 点击菜单栏幽灵图标打开控制面板。底栏可打开设置或退出。超过 8 项时列表保持固定高度并滚动。辅助功能仅在引导或对应控制操作时申请；自动化、蓝牙与专注状态权限按系统要求处理。
 
-主面板控制项仅显示图标、名称与开关，不显示辅助文本或错误弹窗；操作错误记录到系统日志。
+主面板控制项显示图标、名称与开关，不显示辅助文本或错误弹窗；操作错误记录到系统日志。动作完成后图标短暂显示对勾，剪贴板清空后名称显示“剪贴板已清空”两秒。清空只针对系统当前剪贴板，不删除其他应用保存的剪贴板历史。
 
 在设置的“基础设置 → 关于”点击“检查更新”。更新检查读取 GitHub 公开的最新 Release 页面，不使用 GitHub API，也不需要账号、订阅或 Token。发现较新正式版本后，可通过默认浏览器下载匹配 Mac 架构的 DMG、ZIP 或 PKG；没有合适安装包时打开该版本的发布页面。下载后手动安装，应用不会自动替换自身。版本标签使用 `v0.1.0` 或 `0.1.0` 等数字版本；草稿与预发布不参与检查。
 
@@ -104,7 +104,7 @@ Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate ide
 - Native `NSGlassEffectView` Liquid Glass on macOS 26+; `NSVisualEffectView` background blur on macOS 13–25.
 - Settings use the system SwiftUI sidebar and grouped form: General combines language, appearance (System / Light / Dark), launch at login, permissions and About; Controls supports search, selection and drag ordering. Author email, GitHub and X links sit directly at the bottom of the sidebar; interface text is at least 14 pt.
 - Timers for Keep Awake, Dark Mode and Focus; preferences, deadlines and disk protection persist locally.
-- Downloads and Xcode derived data are moved to Trash; emptying Trash permanently deletes its contents. Cleanup, eject and quit-other-apps actions require confirmation.
+- Downloads and Xcode derived data are moved to Trash; emptying Trash permanently deletes its contents. Downloads and Trash execute immediately; Xcode cache cleanup, eject and quit-other-apps actions require confirmation. Emptying Trash runs on a separate background queue with a one-hour timeout, showing progress and preventing duplicate execution while keeping other system controls responsive.
 
 Contact SVG icons come from [Simple Icons](https://github.com/simple-icons/simple-icons) (GitHub and X, CC0) and [Lucide](https://lucide.dev/icons/mail) (email, ISC). Licenses are included in app resources.
 
@@ -123,7 +123,7 @@ Alternatively, open `Onecook.xcodeproj` and run the Onecook scheme. `project.yml
 
 Click the ghost menu bar icon. The footer opens Settings or Quit. More than eight controls scroll within a fixed-height list. Accessibility is requested through onboarding or related controls; automation, Bluetooth and Focus permissions follow macOS requirements.
 
-The main panel shows each control’s icon, name and switch without secondary text or error alerts. Operation errors are written to the system log.
+The main panel shows each control’s icon, name and switch without secondary text or error alerts. Operation errors are written to the system log. Completed actions briefly show a checkmark; clearing the clipboard displays “Clipboard cleared” for two seconds. Only the current system clipboard is cleared, leaving history stored by other apps untouched.
 
 Click “Check for Updates” in General → About. Checks use the public GitHub latest Release page without the GitHub API, an account, a subscription or a token. When a newer stable release exists, the default browser downloads a DMG, ZIP or PKG matching the Mac architecture; if no suitable installer exists, the release page opens instead. Install the downloaded update manually; the app does not replace itself. Release tags must be numeric versions such as `v0.1.0` or `0.1.0`; drafts and prereleases are excluded.
 

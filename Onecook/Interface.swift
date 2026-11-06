@@ -170,6 +170,12 @@ final class ControlsViewController: NSViewController {
         for control in settings.selectedControls {
             guard let (toggle, title, progress, icon) = rows[control.id] else { continue }
             let state = store.state(control.id)
+            let completed = control.isAction && state.completedAt != nil
+            icon.image = NSImage(systemSymbolName: completed ? "checkmark.circle" : control.symbol, accessibilityDescription: nil)
+            title.stringValue = control.id == "clipboard" && completed
+                ? settings.text("剪贴板已清空", "Clipboard cleared")
+                : settings.text(control.zh, control.en)
+            toggle.setAccessibilityValue(state.message)
             icon.contentTintColor = state.enabled
                 ? NSColor.systemBlue.blended(withFraction: 0.35, of: .labelColor)
                 : .secondaryLabelColor

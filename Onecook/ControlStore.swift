@@ -5,6 +5,8 @@ import Intents
 final class ControlStore {
     let settings: Settings
     let cleaning = CleaningController()
+    private let pasteboard: NSPasteboard
+    private let cleanupQueue = DispatchQueue(label: "dev.nialyoung.onecook.cleanup", qos: .userInitiated)
     private let queue = DispatchQueue(label: "dev.nialyoung.onecook.operations", qos: .userInitiated)
     private(set) var states: [String: ControlState] = [:]
     private var assertion: IOPMAssertionID = 0
@@ -19,8 +21,9 @@ final class ControlStore {
     var previousApp: NSRunningApplication?
     var onError: ((Control, Error) -> Void)?
     var onBeforeExternalUI: (() -> Void)?
-    init(settings: Settings) {
+    init(settings: Settings, pasteboard: NSPasteboard = .general) {
         self.settings = settings
+        self.pasteboard = pasteboard
         for control in Control.all { states[control.id] = ControlState(known: control.isAction) }
         cleaning.onScreenStopped = { [weak self] in self?.states["cleanScreen"]?.enabled = false; self?.changed() }
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.tick() }
@@ -103,6 +106,7 @@ final class ControlStore {
         let target = enabled ?? !state(control.id).enabled
         states[control.id]?.busy = true
         states[control.id]?.message = nil
+        states[control.id]?.completedAt = nil
         changed()
         let front = previousApp
         let protected = settings.protectedVolumes
@@ -112,7 +116,11 @@ final class ControlStore {
                 switch control.id {
                 case "cleanScreen": cleaning.setScreen(target, settings: settings)
                 case "lockKeyboard": try cleaning.setKeyboard(target)
-                case "clipboard": NSPasteboard.general.clearContents()
+                case "clipboard":
+                    pasteboard.clearContents()
+                    guard pasteboard.types?.isEmpty ?? true else {
+                        throw OperationError("剪贴板未能清空，请重试 / Could not clear the clipboard; try again")
+                    }
                 case "frontApp":
                     let apps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular && $0.processIdentifier != getpid() && $0 != front }
                     _ = apps.first?.activate(options: .activateIgnoringOtherApps)
@@ -125,7 +133,8 @@ final class ControlStore {
             } catch { complete(control, enabled: target, duration: nil, error: error) }
             return
         }
-        queue.async {
+        let operationQueue = ["emptyTrash", "clearDownloads", "xcodeClean"].contains(control.id) ? cleanupQueue : queue
+        operationQueue.async {
             do {
                 try self.execute(control.id, enabled: target, protected: protected)
                 DispatchQueue.main.async { self.complete(control, enabled: target, duration: duration, error: nil) }
@@ -147,8 +156,15 @@ final class ControlStore {
                 retryAfter.removeValue(forKey: control.id)
             }
             if control.isAction {
+                let completedAt = Date()
+                states[control.id]?.completedAt = completedAt
                 states[control.id]?.message = settings.text("已完成", "Completed")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.states[control.id]?.message = nil; self?.changed() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                    guard let self, self.states[control.id]?.completedAt == completedAt else { return }
+                    self.states[control.id]?.completedAt = nil
+                    self.states[control.id]?.message = nil
+                    self.changed()
+                }
             }
         }
         changed()
@@ -185,7 +201,7 @@ final class ControlStore {
         case "screenSaver": _ = try Command.run("/usr/bin/open", ["-a", "ScreenSaverEngine"])
         case "displaySleep": _ = try Command.run("/usr/bin/pmset", ["displaysleepnow"])
         case "lockScreen": try Command.script("tell application \"System Events\" to keystroke \"q\" using {control down, command down}")
-        case "emptyTrash": try Command.script("tell application \"Finder\" to empty trash")
+        case "emptyTrash": try Command.script("with timeout of 3600 seconds\ntell application \"Finder\" to empty trash\nend timeout", timeout: 3610)
         case "clearDownloads", "xcodeClean":
             let directory = id == "clearDownloads" ? FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first! : FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Developer/Xcode/DerivedData")
             if FileManager.default.fileExists(atPath: directory.path) {

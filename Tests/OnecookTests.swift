@@ -71,10 +71,50 @@ final class OnecookTests: XCTestCase {
         defaults.set(Data("broken".utf8), forKey: "deadlines")
         XCTAssertTrue(settings.deadlines.isEmpty)
     }
-    func testDangerousActionsRequireConfirmation() {
-        for id in ["emptyTrash", "clearDownloads", "xcodeClean", "quitApps", "ejectDisk"] {
+    func testConfirmationPolicyMatchesDirectCleanupActions() {
+        for id in ["xcodeClean", "quitApps", "ejectDisk"] {
             XCTAssertTrue(Control.all.first { $0.id == id }!.needsConfirmation)
         }
+    }
+    func testDownloadsAndTrashExecuteWithoutAppConfirmation() {
+        for id in ["emptyTrash", "clearDownloads", "clipboard"] {
+            XCTAssertFalse(Control.all.first { $0.id == id }!.needsConfirmation)
+        }
+    }
+    @MainActor func testClipboardClickClearsAllTypesAndShowsTemporaryFeedback() throws {
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        settings.visible = ["clipboard"]
+        let store = ControlStore(settings: settings, pasteboard: pasteboard)
+        let controller = ControlsViewController(store: store)
+        let view = controller.view
+        for english in [false, true] {
+            settings.english = english
+            let item = NSPasteboardItem()
+            item.setString("Clipboard regression", forType: .string)
+            item.setString("<b>Clipboard regression</b>", forType: .html)
+            item.setString(FileManager.default.temporaryDirectory.absoluteString, forType: .fileURL)
+            XCTAssertTrue(pasteboard.writeObjects([item]))
+            let currentToggle = try XCTUnwrap(descendants(view).compactMap { $0 as? ControlSwitch }.first)
+            currentToggle.performClick(nil)
+            XCTAssertTrue(pasteboard.types?.isEmpty ?? true)
+            XCTAssertNil(pasteboard.string(forType: .string))
+            XCTAssertNotNil(store.state("clipboard").completedAt)
+            XCTAssertFalse(store.state("clipboard").busy)
+            XCTAssertFalse(store.state("clipboard").enabled)
+            XCTAssertTrue(descendants(view).compactMap { $0 as? NSTextField }.contains {
+                $0.stringValue == (english ? "Clipboard cleared" : "剪贴板已清空")
+            })
+        }
+        XCTAssertTrue(try XCTUnwrap(descendants(view).compactMap { $0 as? ControlSwitch }.first).isEnabled)
+        let reset = XCTNSNotificationExpectation(name: .controlsChanged, object: store)
+        reset.handler = { _ in store.state("clipboard").completedAt == nil }
+        wait(for: [reset], timeout: 4)
+        XCTAssertTrue(descendants(view).compactMap { $0 as? NSTextField }.contains { $0.stringValue == "Clear clipboard" })
+    }
+    func testAppleScriptHonorsOperationTimeout() {
+        XCTAssertThrowsError(try Command.script("delay 2", timeout: 0.1))
+        XCTAssertEqual(try Command.script("return \"ok\"", timeout: 5), "ok")
     }
     func testAilyStatusParsesBuildPreambleAndNestedResponses() {
         XCTAssertEqual(AilyService.parseStatus("build 1\n{\"running\":true}\n"), true)
