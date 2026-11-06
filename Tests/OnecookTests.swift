@@ -98,6 +98,8 @@ final class OnecookTests: XCTestCase {
         if #available(macOS 26, *) { XCTAssertTrue(view is NSGlassEffectView) }
         else { XCTAssertTrue(view is NSVisualEffectView) }
         let scroll = descendants(view).compactMap { $0 as? NSScrollView }.first!
+        let scrollFrame = view.convert(scroll.bounds, from: scroll)
+        XCTAssertEqual(view.bounds.maxY - scrollFrame.maxY, 12, accuracy: 1)
         XCTAssertEqual(scroll.frame.height, 440, accuracy: 1)
         XCTAssertFalse(scroll.hasVerticalScroller)
         settings.visible = Control.all.map(\.id)
@@ -106,7 +108,7 @@ final class OnecookTests: XCTestCase {
         XCTAssertTrue(nextScroll.hasVerticalScroller)
         XCTAssertEqual(nextScroll.frame.height, 440, accuracy: 1)
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
-        XCTAssertEqual(controller.desiredHeight, 499)
+        XCTAssertEqual(controller.desiredHeight, 511)
     }
     @MainActor func testKeepAwakeCreatesAndReleasesRealAssertion() {
         let store = ControlStore(settings: settings)

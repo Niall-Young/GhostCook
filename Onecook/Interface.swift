@@ -59,7 +59,8 @@ final class ControlsViewController: NSViewController {
     private var host: NSView!
     private var rows: [String: (ControlSwitch, NSTextField, NSTextField, NSProgressIndicator)] = [:]
     private var secondaryMenus: [NSMenu] = []
-    var desiredHeight: CGFloat { 59 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
+    private let topPadding: CGFloat = 12
+    var desiredHeight: CGFloat { topPadding + 59 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
     init(store: ControlStore) {
         self.store = store; super.init(nibName: nil, bundle: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(rebuild), name: .settingsChanged, object: nil)
@@ -85,6 +86,7 @@ final class ControlsViewController: NSViewController {
         guard isViewLoaded else { return }
         host.subviews.forEach { $0.removeFromSuperview() }; rows.removeAll(); secondaryMenus.removeAll()
         let stack = NSStackView(); stack.orientation = .vertical; stack.spacing = 0; stack.alignment = .width
+        stack.edgeInsets = NSEdgeInsets(top: topPadding, left: 0, bottom: 0, right: 0)
         fill(stack, in: host)
         let scroll = NSScrollView(); scroll.drawsBackground = false; scroll.hasVerticalScroller = settings.selectedControls.count > 8; scroll.autohidesScrollers = true
         let controls = settings.selectedControls
