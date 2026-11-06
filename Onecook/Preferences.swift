@@ -200,31 +200,6 @@ private struct ControlsPreferencesView: NSViewControllerRepresentable {
     func updateNSViewController(_ nsViewController: ControlListPreferences, context: Context) { nsViewController.refreshLanguage() }
 }
 
-private final class ControlsSearchFieldCell: NSSearchFieldCell {
-    override func searchTextRect(forBounds rect: NSRect) -> NSRect {
-        let content = rect.insetBy(dx: 0, dy: max(0, (rect.height - 24) / 2))
-        return super.searchTextRect(forBounds: content)
-    }
-
-    private func bezelPath(in frame: NSRect) -> NSBezierPath {
-        NSBezierPath(roundedRect: frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 6, yRadius: 6)
-    }
-
-    override func draw(withFrame frame: NSRect, in controlView: NSView) {
-        let path = bezelPath(in: frame)
-        NSColor.textBackgroundColor.setFill()
-        path.fill()
-        NSColor.separatorColor.setStroke()
-        path.lineWidth = 1
-        path.stroke()
-        super.drawInterior(withFrame: frame, in: controlView)
-    }
-
-    override func drawFocusRingMask(withFrame cellFrame: NSRect, in controlView: NSView) {
-        bezelPath(in: cellFrame).fill()
-    }
-}
-
 final class ControlListPreferences: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
     let settings: Settings
     private let table = NSTableView()
@@ -235,11 +210,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 449, height: 512))
-        search.cell = ControlsSearchFieldCell(textCell: "")
-        search.isEditable = true
-        search.isSelectable = true
-        search.cell?.usesSingleLineMode = true
-        search.cell?.isScrollable = true
+        search.bezelStyle = .squareBezel
         search.controlSize = .regular
         search.font = .systemFont(ofSize: 14)
         search.placeholderString = settings.text("搜索控制项", "Search controls")
@@ -278,7 +249,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         group.layer?.masksToBounds = true
         for child in [search, group, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 32),
+            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 28),
             group.leadingAnchor.constraint(equalTo: search.leadingAnchor), group.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor, constant: -4), group.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 16), group.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             scroll.leadingAnchor.constraint(equalTo: group.leadingAnchor, constant: 4), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4), scroll.topAnchor.constraint(equalTo: group.topAnchor, constant: 4), scroll.bottomAnchor.constraint(equalTo: group.bottomAnchor, constant: -4)
         ])
