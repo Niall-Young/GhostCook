@@ -106,7 +106,7 @@ final class OnecookTests: XCTestCase {
         XCTAssertTrue(nextScroll.hasVerticalScroller)
         XCTAssertEqual(nextScroll.frame.height, 440, accuracy: 1)
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
-        XCTAssertEqual(controller.desiredHeight, 558)
+        XCTAssertEqual(controller.desiredHeight, 499)
     }
     @MainActor func testKeepAwakeCreatesAndReleasesRealAssertion() {
         let store = ControlStore(settings: settings)

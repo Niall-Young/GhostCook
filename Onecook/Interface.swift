@@ -58,9 +58,8 @@ final class ControlsViewController: NSViewController {
     var onQuit: (() -> Void)?
     private var host: NSView!
     private var rows: [String: (ControlSwitch, NSTextField, NSTextField, NSProgressIndicator)] = [:]
-    private var headerTitle: NSTextField?
     private var secondaryMenus: [NSMenu] = []
-    var desiredHeight: CGFloat { 118 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
+    var desiredHeight: CGFloat { 59 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
     init(store: ControlStore) {
         self.store = store; super.init(nibName: nil, bundle: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(rebuild), name: .settingsChanged, object: nil)
@@ -87,14 +86,6 @@ final class ControlsViewController: NSViewController {
         host.subviews.forEach { $0.removeFromSuperview() }; rows.removeAll(); secondaryMenus.removeAll()
         let stack = NSStackView(); stack.orientation = .vertical; stack.spacing = 0; stack.alignment = .width
         fill(stack, in: host)
-        let header = NSView(); header.heightAnchor.constraint(equalToConstant: 58).isActive = true
-        let icon = NSImageView(frame: NSRect(x: 16, y: 19, width: 28, height: 24))
-        icon.image = Brand.icon(size: 20)
-        icon.contentTintColor = .labelColor; header.addSubview(icon)
-        let title = label("Onecook", size: 15, weight: .medium); title.frame = NSRect(x: 54, y: 29, width: 250, height: 20); header.addSubview(title); headerTitle = title
-        let subtitle = label(settings.text("快捷控制", "Quick controls"), size: 11.5, color: .secondaryLabelColor)
-        subtitle.frame = NSRect(x: 54, y: 12, width: 250, height: 16); header.addSubview(subtitle)
-        stack.addArrangedSubview(header); stack.addArrangedSubview(separator())
         let scroll = NSScrollView(); scroll.drawsBackground = false; scroll.hasVerticalScroller = settings.selectedControls.count > 8; scroll.autohidesScrollers = true
         let controls = settings.selectedControls
         scroll.heightAnchor.constraint(equalToConstant: CGFloat(min(max(controls.count, 1), 8)) * 55).isActive = true
