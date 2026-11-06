@@ -87,19 +87,22 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
     let settings: Settings
     private let table = NSTableView()
     private let search = NSSearchField()
+    private var summary: NSTextField!
     private let dragType = NSPasteboard.PasteboardType("dev.nialyoung.onecook.control")
     private var items: [Control] { settings.controls.filter { search.stringValue.isEmpty || $0.zh.localizedCaseInsensitiveContains(search.stringValue) || $0.en.localizedCaseInsensitiveContains(search.stringValue) } }
     init(settings: Settings) { self.settings = settings; super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 440, height: 490))
-        search.controlSize = .large
-        search.frame = NSRect(x: 20, y: 432, width: 400, height: 38); search.autoresizingMask = [.minYMargin]; search.placeholderString = settings.text("搜索控制项", "Search controls"); search.delegate = self; view.addSubview(search)
+        summary = label("", size: NSFont.smallSystemFontSize, color: .secondaryLabelColor)
+        summary.frame = NSRect(x: 20, y: 450, width: 400, height: 20); summary.autoresizingMask = [.minYMargin]; view.addSubview(summary)
+        search.frame = NSRect(x: 20, y: 410, width: 400, height: 28); search.autoresizingMask = [.minYMargin]; search.placeholderString = settings.text("搜索控制项", "Search controls"); search.delegate = self; view.addSubview(search)
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("control")); column.width = 396; table.addTableColumn(column)
         table.headerView = nil; table.rowHeight = 34; table.intercellSpacing = .zero; table.style = .inset; table.selectionHighlightStyle = .none
         table.delegate = self; table.dataSource = self; table.backgroundColor = .clear
         table.registerForDraggedTypes([dragType]); table.setDraggingSourceOperationMask(.move, forLocal: true)
-        let scroll = NSScrollView(frame: NSRect(x: 20, y: 20, width: 400, height: 397)); scroll.autoresizingMask = [.width, .height]; scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true; scroll.drawsBackground = false; scroll.documentView = table; view.addSubview(scroll)
+        let scroll = NSScrollView(frame: NSRect(x: 20, y: 20, width: 400, height: 375)); scroll.autoresizingMask = [.width, .height]; scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true; scroll.drawsBackground = false; scroll.documentView = table; view.addSubview(scroll)
+        updateSummary()
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: .settingsChanged, object: nil)
     }
     override func viewDidAppear() {
@@ -107,7 +110,10 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         table.layoutSubtreeIfNeeded()
         if !items.isEmpty { table.scrollRowToVisible(0) }
     }
-    @objc private func reload() { guard isViewLoaded else { return }; table.reloadData() }
+    private func updateSummary() {
+        summary.stringValue = settings.text("选择控制项并拖动调整顺序。已选择 \(settings.visible.count)", "Select and drag to reorder. \(settings.visible.count) selected")
+    }
+    @objc private func reload() { guard isViewLoaded else { return }; updateSummary(); table.reloadData() }
     func controlTextDidChange(_ obj: Notification) { table.reloadData() }
     func numberOfRows(in tableView: NSTableView) -> Int { items.count }
     func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { false }
@@ -123,14 +129,15 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         check.target = target; check.action = #selector(VisibilityTarget.invoke)
         objc_setAssociatedObject(check, &visibilityTargetKey, target, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         accessory = check
-        let grip = NSImageView(); grip.image = NSImage(systemSymbolName: "line.3.horizontal", accessibilityDescription: nil); grip.contentTintColor = .tertiaryLabelColor
-        for element in [grip, icon, title, accessory] { cell.addSubview(element); element.translatesAutoresizingMaskIntoConstraints = false }
+        for element in [icon, title, accessory] { cell.addSubview(element); element.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            grip.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8), grip.centerYAnchor.constraint(equalTo: cell.centerYAnchor), grip.widthAnchor.constraint(equalToConstant: 14),
-            icon.leadingAnchor.constraint(equalTo: grip.trailingAnchor, constant: 12), icon.widthAnchor.constraint(equalToConstant: 18), icon.heightAnchor.constraint(equalToConstant: 18), icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+            icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8), icon.widthAnchor.constraint(equalToConstant: 18), icon.heightAnchor.constraint(equalToConstant: 18), icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
             title.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12), title.centerYAnchor.constraint(equalTo: cell.centerYAnchor), title.trailingAnchor.constraint(lessThanOrEqualTo: accessory.leadingAnchor, constant: -8),
             accessory.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8), accessory.centerYAnchor.constraint(equalTo: cell.centerYAnchor), accessory.widthAnchor.constraint(equalToConstant: 18)
         ])
+        let grip = NSImageView(); grip.image = NSImage(systemSymbolName: "line.3.horizontal", accessibilityDescription: nil); grip.contentTintColor = .tertiaryLabelColor
+        cell.addSubview(grip); grip.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([grip.trailingAnchor.constraint(equalTo: accessory.leadingAnchor, constant: -12), grip.centerYAnchor.constraint(equalTo: cell.centerYAnchor), grip.widthAnchor.constraint(equalToConstant: 14)])
         return cell
     }
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
