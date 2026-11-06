@@ -60,9 +60,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.setActivationPolicy(.accessory)
         NSApp.appearance = settings.theme.appearance
         NotificationCenter.default.addObserver(self, selector: #selector(appearancePreferenceChanged(_:)), name: .settingsChanged, object: nil)
-        statusItem = NSStatusBar.system.statusItem(withLength: 28)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = Brand.icon(size: 18); button.target = self; button.action = #selector(togglePanel); button.toolTip = "GhostCook"; button.setAccessibilityLabel("GhostCook")
+            button.image = Brand.icon(size: 16); button.target = self; button.action = #selector(togglePanel); button.toolTip = "GhostCook"; button.setAccessibilityLabel("GhostCook")
         }
         controls = ControlsViewController(store: store)
         controls.onSettings = { [weak self] in self?.showPreferences($0) }
