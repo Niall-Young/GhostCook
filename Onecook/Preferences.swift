@@ -65,16 +65,13 @@ private struct PreferencesRoot: View {
     @ObservedObject var model: PreferencesModel
     let controls: ControlListPreferences
     var body: some View {
-        if #available(macOS 14, *) { layout.toolbar(removing: .sidebarToggle) }
-        else { layout }
-    }
-    private var layout: some View {
         NavigationSplitView {
             List(selection: $model.selectedPane) {
                 Label { Text(model.text("基础设置", "General")) } icon: { SettingsBadge(symbol: "gearshape.fill", color: .gray) }.tag(0)
                 Label { Text(model.text("控制项", "Controls")) } icon: { SettingsBadge(symbol: "slider.horizontal.3", color: .blue) }.tag(1)
             }
             .listStyle(.sidebar)
+            .modifier(FixedSettingsSidebar())
             .navigationSplitViewColumnWidth(min: 190, ideal: 200, max: 220)
             .safeAreaInset(edge: .bottom, spacing: 0) { ContactCard().padding(12) }
         } detail: {
@@ -103,20 +100,43 @@ private struct SettingsBadge: View {
     }
 }
 
+private struct FixedSettingsSidebar: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(macOS 14, *) { content.toolbar(removing: .sidebarToggle) }
+        else { content }
+    }
+}
+
 private struct ContactCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("Niall Young").font(.system(size: 12, weight: .semibold))
-            Link("niallyoung2002@gmail.com", destination: URL(string: "mailto:niallyoung2002@gmail.com")!)
-                .font(.system(size: 10))
-            Link("GitHub · Niall-Young", destination: URL(string: "https://github.com/Niall-Young")!)
-            Link("X · @NiallxYoung", destination: URL(string: "https://x.com/NiallxYoung")!)
+            Link(destination: URL(string: "mailto:niallyoung2002@gmail.com")!) {
+                Text("niallyoung2002@gmail.com")
+                    .font(.system(size: 10)).foregroundStyle(.secondary)
+                    .lineLimit(1).minimumScaleFactor(0.9)
+            }
+            Divider()
+            HStack {
+                profileLink("GitHub", url: "https://github.com/Niall-Young")
+                Spacer()
+                profileLink("X", url: "https://x.com/NiallxYoung")
+            }
         }
-        .font(.system(size: 11))
-        .tint(.secondary)
+        .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
+        .padding(14)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+    }
+    private func profileLink(_ title: String, url: String) -> some View {
+        Link(destination: URL(string: url)!) {
+            HStack(spacing: 5) {
+                Text(title).font(.system(size: 11))
+                Image(systemName: "arrow.up.right").font(.system(size: 9, weight: .medium))
+            }
+            .foregroundStyle(.primary)
+        }
+        .help(url)
     }
 }
 
@@ -177,9 +197,10 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         column.width = 393
         table.addTableColumn(column)
         table.headerView = nil
-        table.rowHeight = 32
+        table.rowHeight = 44
         table.intercellSpacing = .zero
-        table.style = .inset
+        table.style = .plain
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
         table.selectionHighlightStyle = .none
         table.delegate = self
         table.dataSource = self
@@ -192,10 +213,22 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         scroll.drawsBackground = false
         scroll.documentView = table
         scroll.automaticallyAdjustsContentInsets = false
-        for child in [search, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        let group = NSBox()
+        group.boxType = .custom
+        group.titlePosition = .noTitle
+        group.borderWidth = 0
+        group.cornerRadius = 12
+        group.contentViewMargins = .zero
+        if #available(macOS 14, *) { group.fillColor = .quaternarySystemFill }
+        else { group.fillColor = .controlBackgroundColor }
+        group.wantsLayer = true
+        group.layer?.cornerRadius = 12
+        group.layer?.masksToBounds = true
+        fill(scroll, in: group.contentView!, inset: 4)
+        for child in [search, group] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
             search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 24),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16), scroll.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 14), scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16)
+            group.leadingAnchor.constraint(equalTo: search.leadingAnchor), group.trailingAnchor.constraint(equalTo: search.trailingAnchor), group.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 16), group.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20)
         ])
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: .settingsChanged, object: nil)
     }
@@ -217,7 +250,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         let control = items[row]
         let cell = NSTableCellView()
         let icon = NSImageView(); icon.image = NSImage(systemSymbolName: control.symbol, accessibilityDescription: nil); icon.contentTintColor = .secondaryLabelColor
-        let title = label(settings.english ? control.en : control.zh, size: 14)
+        let title = label(settings.english ? control.en : control.zh, size: 13)
         let accessory: NSView
         let check = NSButton(checkboxWithTitle: "", target: nil, action: nil); check.controlSize = .mini; check.state = settings.visible.contains(control.id) ? .on : .off
         check.setAccessibilityLabel(settings.english ? control.en : control.zh)
