@@ -40,7 +40,7 @@ final class ControlIconView: NSView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func draw(_ dirtyRect: NSRect) {
-        NSColor.quaternaryLabelColor.setFill()
+        NSColor.textBackgroundColor.setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 8, yRadius: 8).fill()
     }
     override func viewDidChangeEffectiveAppearance() {
