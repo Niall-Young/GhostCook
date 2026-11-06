@@ -134,7 +134,13 @@ final class ControlsViewController: NSViewController {
         let row = FlippedView(frame: NSRect(x: 0, y: y, width: 360, height: 55)); row.autoresizingMask = [.width]
         let icon = ControlIconView(symbol: control.symbol)
         let title = label(settings.english ? control.en : control.zh); title.frame = NSRect(x: 60, y: 18, width: 232, height: 18)
-        let toggle = ControlSwitch(frame: NSRect(x: 306, y: 16, width: 38, height: 24)); toggle.setAccessibilityLabel(title.stringValue)
+        let toggle = ControlSwitch(frame: .zero)
+        toggle.sizeToFit()
+        let switchSize = toggle.frame.size
+        toggle.setFrameSize(NSSize(width: switchSize.width * 0.75, height: switchSize.height * 0.75))
+        toggle.setBoundsSize(switchSize)
+        toggle.setFrameOrigin(NSPoint(x: 344 - toggle.frame.width, y: (row.bounds.height - toggle.frame.height) / 2))
+        toggle.setAccessibilityLabel(title.stringValue)
         toggle.handler = { [weak self, weak toggle] in guard let self, let toggle else { return }; self.activate(control, from: toggle) }
         let progress = NSProgressIndicator(frame: NSRect(x: 316, y: 20, width: 16, height: 16)); progress.style = .spinning; progress.controlSize = .small; progress.isDisplayedWhenStopped = false
         [icon, title, toggle, progress].forEach { row.addSubview($0) }
