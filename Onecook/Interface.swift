@@ -15,7 +15,8 @@ final class ActionButton: NSButton {
     convenience init(title: String = "", symbol: String? = nil, handler: @escaping () -> Void) {
         self.init(frame: .zero)
         self.title = title; self.handler = handler; target = self; action = #selector(invoke)
-        bezelStyle = .recessed; showsBorderOnlyWhileMouseInside = true
+        bezelStyle = title.isEmpty && symbol != nil ? .regularSquare : .recessed
+        showsBorderOnlyWhileMouseInside = true
         if let symbol { image = NSImage(systemSymbolName: symbol, accessibilityDescription: title); imagePosition = title.isEmpty ? .imageOnly : .imageLeading }
     }
     @objc private func invoke() { handler?() }
