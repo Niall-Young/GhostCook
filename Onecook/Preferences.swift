@@ -78,7 +78,7 @@ private struct PreferencesRoot: View {
             .listStyle(.sidebar)
             .modifier(FixedSettingsSidebar())
             .navigationSplitViewColumnWidth(min: 190, ideal: 200, max: 220)
-            .safeAreaInset(edge: .bottom, spacing: 0) { ContactCard(english: model.english).padding(12) }
+            .safeAreaInset(edge: .bottom, spacing: 0) { ContactLinks(english: model.english) }
         } detail: {
             Group {
                 if model.selectedPane == 1 {
@@ -113,41 +113,44 @@ private struct FixedSettingsSidebar: ViewModifier {
     }
 }
 
-private struct ContactCard: View {
+private struct ContactLinks: View {
     let english: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Niall Young")
-                .font(.system(size: 14, weight: .semibold))
-            VStack(alignment: .leading, spacing: 10) {
-                contactLink(english ? "Email" : "邮箱", icon: "ContactEmail", url: "mailto:niallyoung2002@gmail.com")
-                contactLink("GitHub", icon: "ContactGitHub", url: "https://github.com/Niall-Young")
-                contactLink("X/Twitter", icon: "ContactX", url: "https://x.com/NiallxYoung")
-            }
+        List(selection: .constant(Set<String>())) {
+            contactLink(english ? "Email" : "邮箱", icon: "ContactEmail", color: .gray, url: "mailto:niallyoung2002@gmail.com")
+            contactLink("GitHub", icon: "ContactGitHub", color: .black, url: "https://github.com/Niall-Young")
+            contactLink("X/Twitter", icon: "ContactX", color: .black, url: "https://x.com/NiallxYoung")
         }
+        .listStyle(.sidebar)
+        .scrollDisabled(true)
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 4)
-        .padding(.bottom, 4)
+        .frame(height: 116)
     }
 
-    private func contactLink(_ title: String, icon: String, url: String) -> some View {
-        Link(destination: URL(string: url)!) {
-            HStack(spacing: 10) {
+    @ViewBuilder private func contactLink(_ title: String, icon: String, color: Color, url: String) -> some View {
+        let link = Link(destination: URL(string: url)!) {
+            Label {
+                Text(title)
+            } icon: {
                 Image(icon)
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 16, height: 16)
+                    .frame(width: 14, height: 14)
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(color.gradient, in: RoundedRectangle(cornerRadius: 5))
                     .accessibilityHidden(true)
-                Text(title)
             }
             .font(.system(size: 14))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
         .help(url)
+        if #available(macOS 14, *) { link.selectionDisabled() }
+        else { link }
     }
 }
 
