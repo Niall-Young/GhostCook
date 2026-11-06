@@ -10,7 +10,12 @@ final class ControlStore {
     private var assertion: IOPMAssertionID = 0
     private var refreshInProgress = false
     private var timer: Timer?
+    private var focusAuthorizationRequested = false
     private var retryAfter: [String: Date] = [:]
+    private(set) var audioDeviceName: String?
+    private(set) var audioBattery: String?
+    private var lastBatteryRead = Date.distantPast
+    private var cachedBattery: String?
     var previousApp: NSRunningApplication?
     var onError: ((Control, Error) -> Void)?
     var onBeforeExternalUI: (() -> Void)?
@@ -19,8 +24,12 @@ final class ControlStore {
         for control in Control.all { states[control.id] = ControlState(known: control.isAction) }
         cleaning.onScreenStopped = { [weak self] in self?.states["cleanScreen"]?.enabled = false; self?.changed() }
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.tick() }
-        NotificationCenter.default.addObserver(self, selector: #selector(wake), name: NSWorkspace.didWakeNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(wake), name: NSWorkspace.didWakeNotification, object: nil)
+    }
+    deinit {
+        timer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
     func state(_ id: String) -> ControlState { states[id] ?? ControlState() }
     func changed() { NotificationCenter.default.post(name: .controlsChanged, object: self) }
@@ -28,9 +37,8 @@ final class ControlStore {
     func refresh() {
         guard !refreshInProgress else { return }
         refreshInProgress = true
-        let awake = assertion != 0
         queue.async {
-            let snapshot = self.snapshot(awake: awake)
+            let snapshot = self.snapshot(awake: self.assertion != 0)
             DispatchQueue.main.async {
                 for (id, value) in snapshot where self.states[id]?.busy != true {
                     var next = value
@@ -56,33 +64,42 @@ final class ControlStore {
         add("stageManager", Command.bool("com.apple.WindowManager", "GloballyEnabled"))
         add("lowPower", ProcessInfo.processInfo.isLowPowerModeEnabled)
         let power = (try? Command.run("/usr/bin/pmset", ["-g", "custom"], timeout: 3)) ?? ""
-        add("highPower", power.range(of: #"powermode\s+2"#, options: .regularExpression) != nil, available: power.contains("powermode"), known: power.contains("powermode"))
+        let highPowerSupported = power.range(of: #"(?m)^\s*(highpowermode|powermode)\s+"#, options: .regularExpression) != nil
+        add("highPower", power.range(of: #"(?m)^\s*(highpowermode\s+1|powermode\s+2)"#, options: .regularExpression) != nil, available: highPowerSupported, known: highPowerSupported)
         let volume = try? Command.script("input volume of (get volume settings)")
         add("muteMic", volume == "0", known: volume != nil)
         let device = BluetoothAudio.preferred
         add("airpods", device?.isConnected() ?? false, available: device != nil)
+        if Date().timeIntervalSince(lastBatteryRead) > 60 {
+            cachedBattery = device.flatMap { BluetoothAudio.batterySummary($0) }
+            lastBatteryRead = Date()
+        }
+        let name = device?.name, battery = cachedBattery
+        DispatchQueue.main.async { self.audioDeviceName = name; self.audioBattery = battery }
+
         for id in ["nightShift", "trueTone"] { result[id] = DisplayFeatures.state(id) }
         let focus = INFocusStatusCenter.default
         let focused = focus.authorizationStatus == .authorized ? focus.focusStatus.isFocused : nil
-        add("dnd", focused?.boolValue ?? false, known: focused != nil)
+        add("dnd", focused ?? false, known: focused != nil)
         for (id, bundle, name) in [("music", "com.apple.Music", "Music"), ("spotify", "com.spotify.client", "Spotify")] {
             let installed = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) != nil
             let running = !NSRunningApplication.runningApplications(withBundleIdentifier: bundle).isEmpty
             let playing = running ? try? Command.script("tell application \"\(name)\" to get player state as string") : "stopped"
             add(id, playing == "playing", available: installed, known: playing != nil)
         }
-        let cli = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".aily-cli/bin/aily-cli").path
-        let installed = FileManager.default.isExecutableFile(atPath: cli)
-        // Do not start the daemon or request permissions merely to render the control list.
-        var aily: Bool?
-        if installed, let output = try? Command.run(cli, ["daemon", "status", "--json"], timeout: 5), let first = output.firstIndex(of: "{"), let data = String(output[first...]).data(using: .utf8), let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            aily = json["running"] as? Bool ?? (json["daemon"] as? [String: Any])?["running"] as? Bool
-        }
-        add("feishuAily", aily ?? false, available: installed, known: aily != nil)
+        let aily = AilyService.status()
+        add("feishuAily", aily ?? false, available: AilyService.installed, known: aily != nil)
         return result
     }
     func perform(_ control: Control, enabled: Bool? = nil, duration: TimeInterval? = nil) {
         guard !state(control.id).busy else { return }
+        if control.id == "dnd", !focusAuthorizationRequested, INFocusStatusCenter.default.authorizationStatus == .notDetermined {
+            focusAuthorizationRequested = true
+            INFocusStatusCenter.default.requestAuthorization { [weak self] _ in
+                DispatchQueue.main.async { self?.perform(control, enabled: enabled, duration: duration) }
+            }
+            return
+        }
         let target = enabled ?? !state(control.id).enabled
         states[control.id]?.busy = true
         states[control.id]?.message = nil
@@ -175,9 +192,7 @@ final class ControlStore {
                 for item in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) { try FileManager.default.trashItem(at: item, resultingItemURL: nil) }
             }
         case "ejectDisk": try Volumes.eject(excluding: protected)
-        case "feishuAily":
-            let cli = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".aily-cli/bin/aily-cli").path
-            _ = try Command.run(cli, enabled ? ["daemon", "start"] : ["daemon", "stop", "--yes", "--timeout", "15"], timeout: 60)
+        case "feishuAily": try AilyService.set(enabled)
         default: throw OperationError("无法执行此控制项 / Unsupported control")
         }
     }
@@ -193,9 +208,13 @@ final class ControlStore {
         cleaning.stopAll()
         let timedIDs = Array(settings.deadlines.keys)
         queue.async {
-            for id in timedIDs { try? self.execute(id, enabled: false, protected: []) }
+            var failed: [String: Date] = [:]
+            for id in timedIDs {
+                do { try self.execute(id, enabled: false, protected: []) }
+                catch { failed[id] = Date() }
+            }
             if self.assertion != 0 { IOPMAssertionRelease(self.assertion); self.assertion = 0 }
-            DispatchQueue.main.async { self.settings.deadlines = [:]; completion() }
+            DispatchQueue.main.async { self.settings.deadlines = failed; completion() }
         }
     }
 }

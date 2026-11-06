@@ -73,7 +73,7 @@ final class Settings {
         set { write(newValue, key: "shortcuts"); changed() }
     }
     var deadlines: [String: Date] {
-        get { read("deadlines", fallback: [:]) }
+        get { (read("deadlines", fallback: [:]) as [String: Date]).filter { id, _ in Control.all.contains { $0.id == id && $0.isTimed } } }
         set { write(newValue, key: "deadlines") }
     }
     var protectedVolumes: [String] {

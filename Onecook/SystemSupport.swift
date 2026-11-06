@@ -12,42 +12,30 @@ struct OperationError: LocalizedError {
 
 // Arguments are always passed directly to Process; no shell interpolation.
 enum Command {
-    static func run(_ path: String, _ arguments: [String], timeout: TimeInterval = 20) throws -> String {
+    static func run(_ path: String, _ arguments: [String], timeout: TimeInterval = 20, environment: [String: String]? = nil, acceptedExitCodes: Set<Int32> = [0]) throws -> String {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("onecook-command-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let outURL = directory.appendingPathComponent("stdout"), errorURL = directory.appendingPathComponent("stderr")
+        FileManager.default.createFile(atPath: outURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
+        FileManager.default.createFile(atPath: errorURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
+        let output = try FileHandle(forWritingTo: outURL), errors = try FileHandle(forWritingTo: errorURL)
+        defer { try? output.close(); try? errors.close() }
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = arguments
-        let output = Pipe(), errors = Pipe()
-        process.standardOutput = output
-        process.standardError = errors
-        let lock = NSLock()
-        var stdout = Data(), stderr = Data()
-        output.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            lock.lock(); stdout.append(data); lock.unlock()
-        }
-        errors.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            lock.lock(); stderr.append(data); lock.unlock()
-        }
+        process.executableURL = URL(fileURLWithPath: path); process.arguments = arguments
+        process.environment = environment
+        process.standardInput = FileHandle.nullDevice; process.standardOutput = output; process.standardError = errors
         let finished = DispatchSemaphore(value: 0)
         process.terminationHandler = { _ in finished.signal() }
         try process.run()
         if finished.wait(timeout: .now() + timeout) == .timedOut {
             process.terminate()
             if finished.wait(timeout: .now() + 2) == .timedOut { kill(process.processIdentifier, SIGKILL); process.waitUntilExit() }
-            output.fileHandleForReading.readabilityHandler = nil
-            errors.fileHandleForReading.readabilityHandler = nil
             throw OperationError("操作超时，请重试 / Operation timed out")
         }
-        output.fileHandleForReading.readabilityHandler = nil
-        errors.fileHandleForReading.readabilityHandler = nil
-        let tailOut = output.fileHandleForReading.readDataToEndOfFile()
-        let tailErr = errors.fileHandleForReading.readDataToEndOfFile()
-        lock.lock(); stdout.append(tailOut); stderr.append(tailErr)
-        let result = String(decoding: stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-        let error = String(decoding: stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-        lock.unlock()
-        guard process.terminationStatus == 0 else { throw OperationError(error.isEmpty ? "macOS 拒绝了此操作 / macOS rejected the operation" : error) }
+        let result = String(decoding: try Data(contentsOf: outURL), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        let error = String(decoding: try Data(contentsOf: errorURL), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard acceptedExitCodes.contains(process.terminationStatus) else { throw OperationError(error.isEmpty ? "macOS 拒绝了此操作 / macOS rejected the operation" : error) }
         return result
     }
     @discardableResult static func script(_ script: String) throws -> String {
@@ -79,10 +67,41 @@ enum BluetoothAudio {
         let devices = (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []).filter {
             $0.deviceClassMajor == 4 || ($0.name ?? "").localizedCaseInsensitiveContains("AirPods") || ($0.name ?? "").localizedCaseInsensitiveContains("Beats")
         }
-        return devices.sorted {
-            if $0.isConnected() != $1.isConnected() { return $0.isConnected() }
-            return ($0.recentAccessDate ?? .distantPast) > ($1.recentAccessDate ?? .distantPast)
-        }.first
+        return devices.sorted(by: { (a: IOBluetoothDevice, b: IOBluetoothDevice) -> Bool in
+            if a.isConnected() != b.isConnected() { return a.isConnected() }
+            return (a.recentAccessDate() ?? Date.distantPast) > (b.recentAccessDate() ?? Date.distantPast)
+        }).first
+    }
+    static func batterySummary(_ device: IOBluetoothDevice) -> String? {
+        guard device.isConnected(), let text = try? Command.run("/usr/sbin/system_profiler", ["SPBluetoothDataType", "-json"], timeout: 8), let data = text.data(using: .utf8), let value = try? JSONSerialization.jsonObject(with: data) else { return nil }
+        let values = batteryValues(value, name: device.name ?? "", address: device.addressString ?? "")
+        return values.isEmpty ? nil : values.joined(separator: " · ")
+    }
+    static func batteryValues(_ value: Any, name: String, address: String) -> [String] {
+        func normal(_ text: String) -> String { text.lowercased().filter { $0.isLetter || $0.isNumber } }
+        func collect(_ value: Any) -> [String] {
+            if let dictionary = value as? [String: Any] {
+                return dictionary.sorted { $0.key < $1.key }.flatMap { key, value -> [String] in
+                    if key.lowercased().contains("battery"), let text = value as? String, text.contains("%") { return [text] }
+                    if key.lowercased().contains("battery"), let number = value as? Int, (0...100).contains(number) { return ["\(number)%"] }
+                    return collect(value)
+                }
+            }
+            return (value as? [Any] ?? []).flatMap(collect)
+        }
+        func find(_ value: Any) -> [String] {
+            if let dictionary = value as? [String: Any] {
+                if let candidate = dictionary["device_address"] as? String, !address.isEmpty, normal(candidate) == normal(address) { return collect(dictionary) }
+                for (key, entry) in dictionary {
+                    if !name.isEmpty && normal(key) == normal(name) { return collect(entry) }
+                    let found = find(entry)
+                    if !found.isEmpty { return found }
+                }
+            }
+            for entry in value as? [Any] ?? [] { let found = find(entry); if !found.isEmpty { return found } }
+            return []
+        }
+        return find(value)
     }
     static func setConnected(_ enabled: Bool) throws {
         guard let device = preferred else { throw OperationError("没有已配对的蓝牙耳机 / No paired Bluetooth headphones") }
@@ -170,7 +189,7 @@ enum DisplayFeatures {
         bytes.initializeMemory(as: UInt8.self, repeating: 0, count: 128)
         typealias Read = @convention(c) (AnyObject, Selector, UnsafeMutableRawPointer) -> Bool
         let read = unsafeBitCast(object.method(for: selector), to: Read.self)(object, selector, bytes)
-        return ControlState(enabled: bytes.load(fromByteOffset: 1, as: UInt8.self) != 0, available: read, known: read)
+        return ControlState(enabled: bytes.load(fromByteOffset: 1, as: UInt8.self) != 0, available: read && bytes.load(fromByteOffset: 32, as: UInt8.self) != 0, known: read)
     }
     static func set(_ id: String, _ enabled: Bool) throws {
         guard state(id).available, let object = client(id == "nightShift" ? "CBBlueLightClient" : "CBTrueToneClient") else { throw OperationError("当前显示器不支持此功能 / Unsupported display") }

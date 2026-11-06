@@ -89,10 +89,7 @@ final class ControlsViewController: NSViewController {
         fill(stack, in: host)
         let header = NSView(); header.heightAnchor.constraint(equalToConstant: 58).isActive = true
         let icon = NSImageView(frame: NSRect(x: 16, y: 19, width: 28, height: 24))
-        icon.image = NSImage(systemSymbolName: "switch.2", accessibilityDescription: nil)
-        // Match the reference's single-switch brand mark, without a custom renderer.
-        icon.image = NSImage(systemSymbolName: "switch.2", accessibilityDescription: "Onecook")
-        if let single = NSImage(systemSymbolName: "switch.programmable", accessibilityDescription: "Onecook") { icon.image = single }
+        icon.image = Brand.icon(size: 20)
         icon.contentTintColor = .labelColor; header.addSubview(icon)
         let title = label("Onecook", size: 15, weight: .medium); title.frame = NSRect(x: 54, y: 29, width: 250, height: 20); header.addSubview(title); headerTitle = title
         let subtitle = label(settings.text("快捷控制", "Quick controls"), size: 11.5, color: .secondaryLabelColor)
@@ -167,7 +164,10 @@ final class ControlsViewController: NSViewController {
                 text = settings.text("剩余 ", "Remaining ") + String(format: "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
             } else if !state.known { text = settings.text("点击授权并读取状态", "Click to authorise and read status") }
             detail.stringValue = text; detail.toolTip = text
-            if control.id == "airpods", let device = BluetoothAudio.preferred { title.stringValue = device.name ?? title.stringValue }
+            if control.id == "airpods" {
+                if let name = store.audioDeviceName { title.stringValue = name }
+                if state.enabled, state.message == nil, let battery = store.audioBattery { detail.stringValue = battery }
+            }
         }
     }
     func activate(_ control: Control, from source: NSView? = nil) {
@@ -180,7 +180,7 @@ final class ControlsViewController: NSViewController {
                 menu.addItem(MenuActionItem(settings.text(zh, en)) { [weak self] in self?.store.perform(control, enabled: true, duration: seconds) })
             }
             menu.addItem(MenuActionItem(settings.text("直到今天结束", "Until the end of today")) { [weak self] in
-                let tomorrow = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400)
+                let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date().addingTimeInterval(86400)
                 self?.store.perform(control, enabled: true, duration: tomorrow.timeIntervalSinceNow)
             })
             menu.addItem(.separator())

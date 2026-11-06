@@ -7,8 +7,9 @@ settings:
   base:
     SWIFT_VERSION: '5.0'
     MACOSX_DEPLOYMENT_TARGET: '13.0'
-    CODE_SIGN_IDENTITY: '-'
+    CODE_SIGN_IDENTITY: 'Developer ID Application: Niall Young (V8GVW783CK)'
     CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: V8GVW783CK
     ENABLE_HARDENED_RUNTIME: YES
     ENABLE_DEBUG_DYLIB: NO
     GENERATE_INFOPLIST_FILE: YES
@@ -23,6 +24,12 @@ targets:
     type: application
     platform: macOS
     sources: [Onecook]
+    info:
+      path: Onecook/Info.plist
+      properties:
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook
@@ -42,6 +49,7 @@ targets:
       - target: Onecook
     settings:
       base:
+        MACOSX_DEPLOYMENT_TARGET: '14.0'
         PRODUCT_BUNDLE_IDENTIFIER: dev.nialyoung.onecook.tests
 schemes:
   Onecook:
