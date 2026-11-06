@@ -108,7 +108,7 @@ final class OnecookTests: XCTestCase {
         XCTAssertTrue(nextScroll.hasVerticalScroller)
         XCTAssertEqual(nextScroll.frame.height, 440, accuracy: 1)
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
-        XCTAssertEqual(controller.desiredHeight, 511)
+        XCTAssertEqual(controller.desiredHeight, 519)
     }
     @MainActor func testPreferencesRoutingAndLocalizedControlSearch() throws {
         let controller = PreferencesController(settings: settings)

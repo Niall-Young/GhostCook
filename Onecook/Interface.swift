@@ -80,7 +80,8 @@ final class ControlsViewController: NSViewController {
     private var rows: [String: (ControlSwitch, NSTextField, NSProgressIndicator, ControlIconView)] = [:]
     private var secondaryMenus: [NSMenu] = []
     private let topPadding: CGFloat = 12
-    var desiredHeight: CGFloat { topPadding + 59 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
+    private let footerHeight: CGFloat = 66
+    var desiredHeight: CGFloat { topPadding + 1 + footerHeight + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
     init(store: ControlStore) {
         self.store = store; super.init(nibName: nil, bundle: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(rebuild), name: .settingsChanged, object: nil)
@@ -122,11 +123,11 @@ final class ControlsViewController: NSViewController {
         }
         scroll.documentView = document; stack.addArrangedSubview(scroll)
         stack.addArrangedSubview(separator())
-        let footer = NSView(); footer.heightAnchor.constraint(equalToConstant: 58).isActive = true
+        let footer = NSView(); footer.heightAnchor.constraint(equalToConstant: footerHeight).isActive = true
         let prefs = ActionButton(title: "", symbol: "slider.horizontal.3") { [weak self] in self?.onSettings?(0) }
-        prefs.frame = NSRect(x: 14, y: 12, width: 34, height: 34); prefs.toolTip = settings.text("设置", "Settings"); prefs.setAccessibilityLabel(prefs.toolTip)
+        prefs.frame = NSRect(x: 14, y: 16, width: 34, height: 34); prefs.toolTip = settings.text("设置", "Settings"); prefs.setAccessibilityLabel(prefs.toolTip)
         let quit = ActionButton(title: "", symbol: "power") { [weak self] in self?.onQuit?() }
-        quit.frame = NSRect(x: 312, y: 12, width: 34, height: 34); quit.toolTip = settings.text("退出 Onecook", "Quit Onecook"); quit.setAccessibilityLabel(quit.toolTip)
+        quit.frame = NSRect(x: 312, y: 16, width: 34, height: 34); quit.toolTip = settings.text("退出 Onecook", "Quit Onecook"); quit.setAccessibilityLabel(quit.toolTip)
         [prefs, quit].forEach { footer.addSubview($0) }
         stack.addArrangedSubview(footer)
         updateStates(); onResize?()
