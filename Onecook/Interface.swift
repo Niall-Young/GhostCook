@@ -31,7 +31,7 @@ final class FlippedView: NSView { override var isFlipped: Bool { true } }
 
 final class ControlIconView: NSImageView {
     init(symbol: String) {
-        super.init(frame: NSRect(x: 19, y: 15.5, width: 24, height: 24))
+        super.init(frame: NSRect(x: 21, y: 17.5, width: 20, height: 20))
         image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
         imageScaling = .scaleProportionallyUpOrDown
         contentTintColor = .secondaryLabelColor
