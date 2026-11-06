@@ -9,7 +9,7 @@ final class PreferencesController: NSWindowController {
     init(settings: Settings) {
         self.settings = settings
         lastLanguage = settings.english
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 540), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 740, height: 540), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.title = settings.text("Onecook 设置", "Onecook Settings")
         window.titleVisibility = .hidden
@@ -27,7 +27,9 @@ final class PreferencesController: NSWindowController {
         populate()
     }
     private func populate() {
+        let selected = content?.selectedPane ?? 0
         content = PreferencesContent(settings: settings)
+        content.selectPane(selected)
         window?.contentViewController = content
         window?.title = settings.text("Onecook 设置", "Onecook Settings")
     }
@@ -35,21 +37,26 @@ final class PreferencesController: NSWindowController {
         NSApp.activate(ignoringOtherApps: true)
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
-        if pane == 1 { content.focusSearch() }
+        content.selectPane(pane)
     }
 }
 
-private final class PreferencesContent: NSViewController {
+private final class PreferencesContent: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     private let settings: Settings
     private let controls: ControlListPreferences
+    private let general: GeneralPreferences
+    private let navigation = NSTableView()
+    private let pageHost = NSView()
+    private(set) var selectedPane = 0
     init(settings: Settings) {
         self.settings = settings
         controls = ControlListPreferences(settings: settings)
+        general = GeneralPreferences(settings: settings)
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func loadView() {
-        view = NSView(frame: NSRect(x: 0, y: 0, width: 700, height: 540))
+        view = NSView(frame: NSRect(x: 0, y: 0, width: 740, height: 540))
         let sidebar: NSView
         let sidebarContent = NSView()
         if #available(macOS 26, *) {
@@ -65,38 +72,97 @@ private final class PreferencesContent: NSViewController {
             sidebar = blur
             fill(sidebarContent, in: blur)
         }
-        let general = GeneralPreferences(settings: settings)
-        addChild(general)
-        addChild(controls)
-        let icon = NSImageView()
-        icon.image = NSImage(named: NSImage.applicationIconName)
-        let name = label("Onecook", size: 20, weight: .semibold)
-        let version = label(settings.text("版本 ", "Version ") + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"), size: 11, color: .secondaryLabelColor)
-        let identity = NSStackView(views: [name, version])
-        identity.orientation = .vertical
-        identity.alignment = .leading
-        identity.spacing = 4
-        let github = ActionButton(title: "GitHub", symbol: "arrow.up.right") {
-            NSWorkspace.shared.open(URL(string: "https://github.com/Cherry-Yiran/OneTouch")!)
-        }
-        github.imagePosition = .imageTrailing
-        github.bezelStyle = .inline
-        github.contentTintColor = .secondaryLabelColor
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("pane"))
+        navigation.addTableColumn(column)
+        navigation.headerView = nil
+        navigation.style = .sourceList
+        navigation.rowHeight = 34
+        navigation.backgroundColor = .clear
+        navigation.focusRingType = .none
+        navigation.delegate = self
+        navigation.dataSource = self
+        navigation.setAccessibilityLabel(settings.text("设置分类", "Settings categories"))
+        let navScroll = NSScrollView()
+        navScroll.drawsBackground = false
+        navScroll.documentView = navigation
+        navScroll.automaticallyAdjustsContentInsets = false
+        let contact = preferenceGroup()
+        let name = label("Niall Young", size: 13, weight: .semibold)
+        let email = contactLink("niallyoung2002@gmail.com", url: "mailto:niallyoung2002@gmail.com", size: 10)
+        let github = contactLink("GitHub · Niall-Young", url: "https://github.com/Niall-Young")
+        let x = contactLink("X · @NiallxYoung", url: "https://x.com/NiallxYoung")
+        let links = NSStackView(views: [name, email, github, x])
+        links.orientation = .vertical
+        links.alignment = .leading
+        links.spacing = 10
+        fill(links, in: contact.contentView!, inset: 12)
         let divider = NSBox()
         divider.boxType = .separator
-        for child in [sidebar, controls.view, divider] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-        for child in [icon, identity, general.view, github] { sidebarContent.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        for child in [sidebar, pageHost, divider] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        for child in [navScroll, contact] { sidebarContent.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            sidebar.leadingAnchor.constraint(equalTo: view.leadingAnchor), sidebar.topAnchor.constraint(equalTo: view.topAnchor), sidebar.bottomAnchor.constraint(equalTo: view.bottomAnchor), sidebar.widthAnchor.constraint(equalToConstant: 250),
+            sidebar.leadingAnchor.constraint(equalTo: view.leadingAnchor), sidebar.topAnchor.constraint(equalTo: view.topAnchor), sidebar.bottomAnchor.constraint(equalTo: view.bottomAnchor), sidebar.widthAnchor.constraint(equalToConstant: 228),
             divider.leadingAnchor.constraint(equalTo: sidebar.trailingAnchor), divider.topAnchor.constraint(equalTo: view.topAnchor), divider.bottomAnchor.constraint(equalTo: view.bottomAnchor), divider.widthAnchor.constraint(equalToConstant: 1),
-            controls.view.leadingAnchor.constraint(equalTo: divider.trailingAnchor), controls.view.trailingAnchor.constraint(equalTo: view.trailingAnchor), controls.view.topAnchor.constraint(equalTo: view.topAnchor, constant: 28), controls.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            icon.leadingAnchor.constraint(equalTo: sidebarContent.leadingAnchor, constant: 22), icon.topAnchor.constraint(equalTo: sidebarContent.topAnchor, constant: 54), icon.widthAnchor.constraint(equalToConstant: 48), icon.heightAnchor.constraint(equalToConstant: 48),
-            identity.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12), identity.centerYAnchor.constraint(equalTo: icon.centerYAnchor),
-            general.view.leadingAnchor.constraint(equalTo: sidebarContent.leadingAnchor, constant: 24), general.view.trailingAnchor.constraint(equalTo: sidebarContent.trailingAnchor, constant: -24), general.view.topAnchor.constraint(equalTo: icon.bottomAnchor, constant: 36), general.view.heightAnchor.constraint(equalToConstant: 230),
-            github.leadingAnchor.constraint(equalTo: general.view.leadingAnchor), github.bottomAnchor.constraint(equalTo: sidebarContent.bottomAnchor, constant: -22)
+            pageHost.leadingAnchor.constraint(equalTo: divider.trailingAnchor), pageHost.trailingAnchor.constraint(equalTo: view.trailingAnchor), pageHost.topAnchor.constraint(equalTo: view.topAnchor, constant: 28), pageHost.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            navScroll.leadingAnchor.constraint(equalTo: sidebarContent.leadingAnchor, constant: 8), navScroll.trailingAnchor.constraint(equalTo: sidebarContent.trailingAnchor, constant: -8), navScroll.topAnchor.constraint(equalTo: sidebarContent.topAnchor, constant: 54), navScroll.bottomAnchor.constraint(equalTo: contact.topAnchor, constant: -20),
+            contact.leadingAnchor.constraint(equalTo: sidebarContent.leadingAnchor, constant: 12), contact.trailingAnchor.constraint(equalTo: sidebarContent.trailingAnchor, constant: -12), contact.bottomAnchor.constraint(equalTo: sidebarContent.bottomAnchor, constant: -16)
         ])
+        for page in [general as NSViewController, controls] {
+            addChild(page)
+            fill(page.view, in: pageHost)
+        }
+        selectPane(selectedPane)
     }
-    func focusSearch() { controls.focusSearch() }
+    func selectPane(_ index: Int) {
+        selectedPane = index == 1 ? 1 : 0
+        guard isViewLoaded else { return }
+        navigation.selectRowIndexes(IndexSet(integer: selectedPane), byExtendingSelection: false)
+        general.view.isHidden = selectedPane != 0
+        controls.view.isHidden = selectedPane != 1
+        view.window?.makeFirstResponder(navigation)
+    }
+    func numberOfRows(in tableView: NSTableView) -> Int { 2 }
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        let title = row == 0 ? settings.text("基础设置", "General") : settings.text("控制项", "Controls")
+        let cell = NSTableCellView()
+        let image = NSImageView()
+        image.image = NSImage(systemSymbolName: row == 0 ? "gearshape" : "slider.horizontal.3", accessibilityDescription: nil)
+        image.contentTintColor = .secondaryLabelColor
+        let text = label(title, size: 13)
+        cell.imageView = image
+        cell.textField = text
+        for child in [image, text] { cell.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        NSLayoutConstraint.activate([
+            image.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8), image.centerYAnchor.constraint(equalTo: cell.centerYAnchor), image.widthAnchor.constraint(equalToConstant: 18), image.heightAnchor.constraint(equalToConstant: 18),
+            text.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: 8), text.centerYAnchor.constraint(equalTo: cell.centerYAnchor), text.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8)
+        ])
+        return cell
+    }
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        guard navigation.selectedRow >= 0, navigation.selectedRow != selectedPane else { return }
+        selectPane(navigation.selectedRow)
+    }
+    private func contactLink(_ title: String, url: String, size: CGFloat = 11) -> NSButton {
+        let button = ActionButton(title: title) { NSWorkspace.shared.open(URL(string: url)!) }
+        button.isBordered = false
+        button.font = .systemFont(ofSize: size)
+        button.contentTintColor = .linkColor
+        button.alignment = .left
+        button.toolTip = url
+        return button
+    }
+}
+
+private func preferenceGroup() -> NSBox {
+    let box = NSBox()
+    box.boxType = .custom
+    box.titlePosition = .noTitle
+    box.cornerRadius = 8
+    box.borderWidth = 0.5
+    box.borderColor = .separatorColor
+    box.fillColor = .controlBackgroundColor
+    box.contentViewMargins = .zero
+    return box
 }
 
 final class GeneralPreferences: NSViewController {
@@ -126,21 +192,48 @@ final class GeneralPreferences: NSViewController {
         }
         let permission = ActionButton(title: settings.text("打开系统设置", "Open System Settings")) { SystemSettings.requestAccessibility() }
         permission.bezelStyle = .rounded; permission.showsBorderOnlyWhileMouseInside = false
-        let languageTitle = label(settings.text("语言", "Language"), size: 12, color: .secondaryLabelColor)
-        let launchTitle = label(settings.text("登录时启动", "Launch at login"), size: 13)
-        let permissionTitle = label(settings.text("辅助功能", "Accessibility"), size: 12, color: .secondaryLabelColor)
-        permission.title = settings.text("系统设置…", "System Settings…")
-        permission.controlSize = .regular
-        for child in [languageTitle, language, launchTitle, login, permissionTitle, permission] {
-            view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false
+        let heading = label(settings.text("基础设置", "General"), size: 20, weight: .semibold)
+        let group = preferenceGroup()
+        let rows = NSStackView()
+        rows.orientation = .vertical
+        rows.spacing = 0
+        rows.alignment = .width
+        let pairs: [(String, NSView)] = [
+            (settings.text("语言", "Language"), language),
+            (settings.text("登录时启动", "Launch at login"), login),
+            (settings.text("辅助功能", "Accessibility"), permission)
+        ]
+        for (index, pair) in pairs.enumerated() {
+            if index > 0 { let line = NSBox(); line.boxType = .separator; rows.addArrangedSubview(line) }
+            let row = NSView()
+            let title = label(pair.0, size: 13)
+            for child in [title, pair.1] { row.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+            NSLayoutConstraint.activate([
+                row.heightAnchor.constraint(equalToConstant: 48), title.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 14), title.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+                pair.1.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -14), pair.1.centerYAnchor.constraint(equalTo: row.centerYAnchor), title.trailingAnchor.constraint(lessThanOrEqualTo: pair.1.leadingAnchor, constant: -16)
+            ])
+            rows.addArrangedSubview(row)
         }
+        fill(rows, in: group.contentView!)
+        let aboutHeading = label(settings.text("关于", "About"), size: 13, color: .secondaryLabelColor, weight: .medium)
+        let about = preferenceGroup()
+        let icon = NSImageView()
+        icon.image = NSImage(named: NSImage.applicationIconName)
+        let name = label("Onecook", size: 15, weight: .semibold)
+        let version = label(settings.text("版本 ", "Version ") + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"), size: 12, color: .secondaryLabelColor)
+        let identity = NSStackView(views: [name, version])
+        identity.orientation = .vertical
+        identity.alignment = .leading
+        identity.spacing = 4
+        for child in [icon, identity] { about.contentView!.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        for child in [heading, group, aboutHeading, about] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            languageTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor), languageTitle.topAnchor.constraint(equalTo: view.topAnchor),
-            language.leadingAnchor.constraint(equalTo: view.leadingAnchor), language.trailingAnchor.constraint(equalTo: view.trailingAnchor), language.topAnchor.constraint(equalTo: languageTitle.bottomAnchor, constant: 8),
-            launchTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor), launchTitle.topAnchor.constraint(equalTo: language.bottomAnchor, constant: 25),
-            login.trailingAnchor.constraint(equalTo: view.trailingAnchor), login.centerYAnchor.constraint(equalTo: launchTitle.centerYAnchor),
-            permissionTitle.leadingAnchor.constraint(equalTo: view.leadingAnchor), permissionTitle.topAnchor.constraint(equalTo: launchTitle.bottomAnchor, constant: 28),
-            permission.leadingAnchor.constraint(equalTo: view.leadingAnchor), permission.topAnchor.constraint(equalTo: permissionTitle.bottomAnchor, constant: 8)
+            heading.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24), heading.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            group.leadingAnchor.constraint(equalTo: heading.leadingAnchor), group.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24), group.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 22),
+            aboutHeading.leadingAnchor.constraint(equalTo: heading.leadingAnchor, constant: 2), aboutHeading.topAnchor.constraint(equalTo: group.bottomAnchor, constant: 28),
+            about.leadingAnchor.constraint(equalTo: group.leadingAnchor), about.trailingAnchor.constraint(equalTo: group.trailingAnchor), about.topAnchor.constraint(equalTo: aboutHeading.bottomAnchor, constant: 10), about.heightAnchor.constraint(equalToConstant: 86),
+            icon.leadingAnchor.constraint(equalTo: about.contentView!.leadingAnchor, constant: 14), icon.centerYAnchor.constraint(equalTo: about.contentView!.centerYAnchor), icon.widthAnchor.constraint(equalToConstant: 48), icon.heightAnchor.constraint(equalToConstant: 48),
+            identity.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12), identity.centerYAnchor.constraint(equalTo: icon.centerYAnchor)
         ])
     }
     @objc private func setLanguage(_ sender: NSPopUpButton) { settings.english = sender.indexOfSelectedItem == 1 }

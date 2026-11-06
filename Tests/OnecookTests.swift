@@ -110,7 +110,7 @@ final class OnecookTests: XCTestCase {
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
         XCTAssertEqual(controller.desiredHeight, 511)
     }
-    @MainActor func testUnifiedPreferencesSearchAndLanguageRebuild() throws {
+    @MainActor func testSidebarPreferencesNavigationSearchAndLanguageRebuild() throws {
         let controller = PreferencesController(settings: settings)
         let window = try XCTUnwrap(controller.window)
         for english in [false, true] {
@@ -119,6 +119,15 @@ final class OnecookTests: XCTestCase {
             content.view.layoutSubtreeIfNeeded()
             XCTAssertNil(window.toolbar)
             let list = try XCTUnwrap(content.children.compactMap { $0 as? ControlListPreferences }.first)
+            let navigation = try XCTUnwrap(descendants(content.view).compactMap { $0 as? NSTableView }.first { $0.style == .sourceList })
+            XCTAssertEqual(navigation.numberOfRows, 2)
+            XCTAssertTrue(list.view.isHidden)
+            navigation.selectRowIndexes(IndexSet(integer: 1), byExtendingSelection: false)
+            XCTAssertFalse(list.view.isHidden)
+            let destinations = descendants(content.view).compactMap { ($0 as? NSButton)?.toolTip }
+            XCTAssertTrue(destinations.contains("mailto:niallyoung2002@gmail.com"))
+            XCTAssertTrue(destinations.contains("https://github.com/Niall-Young"))
+            XCTAssertTrue(destinations.contains("https://x.com/NiallxYoung"))
             let search = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSSearchField }.first)
             let table = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSTableView }.first)
             XCTAssertEqual(table.numberOfRows, 31)
@@ -135,6 +144,8 @@ final class OnecookTests: XCTestCase {
             search.stringValue = ""
             list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
             XCTAssertEqual(table.numberOfRows, 31)
+            navigation.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+            XCTAssertTrue(list.view.isHidden)
         }
         window.close()
     }
