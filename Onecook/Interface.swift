@@ -57,7 +57,7 @@ final class ControlsViewController: NSViewController {
     var onResize: (() -> Void)?
     var onQuit: (() -> Void)?
     private var host: NSView!
-    private var rows: [String: (ControlSwitch, NSTextField, NSTextField, NSProgressIndicator)] = [:]
+    private var rows: [String: (ControlSwitch, NSTextField, NSProgressIndicator)] = [:]
     private var secondaryMenus: [NSMenu] = []
     private let topPadding: CGFloat = 12
     var desiredHeight: CGFloat { topPadding + 59 + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
@@ -121,17 +121,16 @@ final class ControlsViewController: NSViewController {
     private func makeRow(_ control: Control, y: CGFloat) -> NSView {
         let row = FlippedView(frame: NSRect(x: 0, y: y, width: 360, height: 55)); row.autoresizingMask = [.width]
         let icon = NSImageView(frame: NSRect(x: 16, y: 16, width: 22, height: 22)); icon.image = NSImage(systemSymbolName: control.symbol, accessibilityDescription: nil); icon.contentTintColor = .secondaryLabelColor
-        let title = label(settings.english ? control.en : control.zh); title.frame = NSRect(x: 50, y: 10, width: 242, height: 18)
-        let detail = label(settings.english ? control.detailEN : control.detailZH, size: NSFont.smallSystemFontSize, color: .secondaryLabelColor); detail.frame = NSRect(x: 50, y: 29, width: 242, height: 16)
+        let title = label(settings.english ? control.en : control.zh); title.frame = NSRect(x: 50, y: 18, width: 242, height: 18)
         let toggle = ControlSwitch(frame: NSRect(x: 306, y: 16, width: 38, height: 24)); toggle.setAccessibilityLabel(title.stringValue)
         toggle.handler = { [weak self, weak toggle] in guard let self, let toggle else { return }; self.activate(control, from: toggle) }
         let progress = NSProgressIndicator(frame: NSRect(x: 316, y: 20, width: 16, height: 16)); progress.style = .spinning; progress.controlSize = .small; progress.isDisplayedWhenStopped = false
-        [icon, title, detail, toggle, progress].forEach { row.addSubview($0) }
+        [icon, title, toggle, progress].forEach { row.addSubview($0) }
         if control.id == "ejectDisk" {
             let menu = NSMenu(); menu.delegate = self; toggle.menu = menu
             let press = NSPressGestureRecognizer(target: self, action: #selector(protectDisks(_:))); press.minimumPressDuration = 0.45; toggle.addGestureRecognizer(press)
         }
-        rows[control.id] = (toggle, title, detail, progress)
+        rows[control.id] = (toggle, title, progress)
         return row
     }
     @objc private func protectDisks(_ gesture: NSPressGestureRecognizer) {
@@ -139,26 +138,14 @@ final class ControlsViewController: NSViewController {
     }
     @objc func updateStates() {
         for control in settings.selectedControls {
-            guard let (toggle, title, detail, progress) = rows[control.id] else { continue }
+            guard let (toggle, title, progress) = rows[control.id] else { continue }
             let state = store.state(control.id)
             toggle.state = state.busy || state.enabled ? .on : .off
             toggle.isEnabled = state.available && !state.busy
             toggle.isHidden = state.busy
             if state.busy { progress.startAnimation(nil) } else { progress.stopAnimation(nil) }
             title.textColor = state.available ? .labelColor : .secondaryLabelColor
-            var text = settings.english ? control.detailEN : control.detailZH
-            if let message = state.message { text = message }
-            else if state.busy { text = settings.text("正在处理中…", "Processing…") }
-            else if !state.available { text = settings.text("当前不可用", "Not available") }
-            else if let deadline = settings.deadlines[control.id] {
-                let seconds = max(0, Int(deadline.timeIntervalSinceNow))
-                text = settings.text("剩余 ", "Remaining ") + String(format: "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-            } else if !state.known { text = settings.text("点击授权并读取状态", "Click to authorise and read status") }
-            detail.stringValue = text; detail.toolTip = text
-            if control.id == "airpods" {
-                if let name = store.audioDeviceName { title.stringValue = name }
-                if state.enabled, state.message == nil, let battery = store.audioBattery { detail.stringValue = battery }
-            }
+            if control.id == "airpods", let name = store.audioDeviceName { title.stringValue = name }
         }
     }
     func activate(_ control: Control, from source: NSView? = nil) {

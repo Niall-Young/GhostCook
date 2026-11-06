@@ -48,15 +48,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.isReleasedWhenClosed = false; panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.contentViewController = controls; panel.delegate = self
-        store.onError = { [weak self] control, error in
-            guard let self else { return }
-            self.hidePanel()
-            NSApp.activate(ignoringOtherApps: true)
-            let alert = NSAlert(); alert.messageText = self.settings.english ? control.en : control.zh
-            alert.informativeText = error.localizedDescription
-            alert.addButton(withTitle: self.settings.text("好", "OK"))
-            if !AXIsProcessTrusted() { alert.addButton(withTitle: self.settings.text("辅助功能设置", "Accessibility Settings")) }
-            if alert.runModal() == .alertSecondButtonReturn { SystemSettings.requestAccessibility() }
+        store.onError = { control, error in
+            NSLog("Onecook [%@]: %@", control.id, error.localizedDescription)
         }
         store.onBeforeExternalUI = { [weak self] in self?.hidePanel() }
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(frontAppChanged(_:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
