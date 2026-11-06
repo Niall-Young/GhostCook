@@ -9,7 +9,7 @@ Swift + AppKit 原生 macOS 菜单栏工具，参考 [OneTouch](https://github.c
 
 ### 项目简介
 
-独立的原生实现，不依赖 React、Tauri、Rust 或 WebView。主面板使用系统菜单栏状态项与无箭头 `NSPanel`，正常启动不弹出控制窗口，不显示 Dock 图标。
+独立的原生实现，主面板使用 AppKit，设置使用 SwiftUI，不依赖 React、Tauri、Rust 或 WebView。主面板使用系统菜单栏状态项与无箭头 `NSPanel`，正常启动不弹出控制窗口，不显示 Dock 图标。
 
 参考版本：OneTouch `ba2c9d7eb9502ae2964408457a0c480903694421`。本项目使用独立标识 `dev.nialyoung.onecook` 和独立偏好数据，不修改 OneTouch 的配置。应用图标沿用参考仓库的 `src-tauri/icons/icon.icns`；上游未附许可证，公开分发前需确认图标与参考内容的使用授权。
 
@@ -17,7 +17,7 @@ Swift + AppKit 原生 macOS 菜单栏工具，参考 [OneTouch](https://github.c
 
 - 31 个控制项：桌面图标、深色模式、保持唤醒、蓝牙耳机与可读取的电量、专注模式、夜览、屏幕保护、原彩显示、前台应用、麦克风、Xcode 缓存、废纸篓、下载目录、磁盘、剪贴板、隐藏窗口、Dock、电源模式、Music、Spotify、隐藏文件、显示休眠、分辨率、小组件、台前调度、屏幕与键盘清洁、锁屏、退出其他应用、飞书 aily。
 - macOS 26 及以上使用 `NSGlassEffectView` 原生液态玻璃；macOS 13–25 使用 `NSVisualEffectView` 背景模糊。
-- 原生侧边栏设置：基础设置整合语言、登录启动、权限与关于；控制项支持搜索、勾选与拖动排序。侧边栏底部提供作者邮箱、GitHub 和 X 联系入口。
+- 设置窗口使用系统 SwiftUI 侧栏与分组表单：基础设置整合语言、登录启动、权限与关于；控制项支持搜索、勾选与拖动排序。侧边栏底部提供作者邮箱、GitHub 和 X 联系入口。
 - 唤醒、深色与专注模式支持定时；偏好、定时截止时间与磁盘保护在本机保存。
 - 清理下载和 Xcode 派生数据移入废纸篓；清空废纸篓会永久删除其中内容。清理、推出磁盘与退出其他应用先确认。
 
@@ -67,7 +67,7 @@ open build/DerivedData/Build/Products/Debug/Onecook.app --args --show-controls
 
 ### Overview
 
-An independent native Swift + AppKit implementation inspired by [OneTouch](https://github.com/Cherry-Yiran/OneTouch), without React, Tauri, Rust or WebView. A system status item opens an arrowless `NSPanel`; normal launch does not show the panel or a Dock icon.
+An independent native implementation with an AppKit menu panel and SwiftUI settings, inspired by [OneTouch](https://github.com/Cherry-Yiran/OneTouch), without React, Tauri, Rust or WebView. A system status item opens an arrowless `NSPanel`; normal launch does not show the panel or a Dock icon.
 
 Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate identifier `dev.nialyoung.onecook` and preference domain leave OneTouch settings untouched. The app icon comes from the reference repository’s `src-tauri/icons/icon.icns`. No upstream license was included; confirm rights to the icon and reference content before public distribution.
 
@@ -75,7 +75,7 @@ Reference revision: `ba2c9d7eb9502ae2964408457a0c480903694421`. The separate ide
 
 - 31 controls: desktop icons, Dark Mode, Keep Awake, Bluetooth headphones with available battery readings, Focus, Night Shift, screen saver, True Tone, front app, microphone, Xcode cache, Trash, Downloads, disks, clipboard, hide window, Dock, power modes, Music, Spotify, hidden files, display sleep, resolution, widgets, Stage Manager, screen and keyboard cleaning, lock screen, quit other apps, and Feishu aily.
 - Native `NSGlassEffectView` Liquid Glass on macOS 26+; `NSVisualEffectView` background blur on macOS 13–25.
-- Native sidebar settings: General combines language, launch at login, permissions and About; Controls supports search, selection and drag ordering. An author card at the bottom of the sidebar links to email, GitHub and X.
+- Settings use the system SwiftUI sidebar and grouped form: General combines language, launch at login, permissions and About; Controls supports search, selection and drag ordering. An author card at the bottom of the sidebar links to email, GitHub and X.
 - Timers for Keep Awake, Dark Mode and Focus; preferences, deadlines and disk protection persist locally.
 - Downloads and Xcode derived data are moved to Trash; emptying Trash permanently deletes its contents. Cleanup, eject and quit-other-apps actions require confirmation.
 

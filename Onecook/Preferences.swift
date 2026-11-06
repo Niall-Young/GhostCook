@@ -1,242 +1,163 @@
 import AppKit
 import ServiceManagement
+import SwiftUI
 
 final class PreferencesController: NSWindowController {
     let settings: Settings
-    private var lastLanguage: Bool
-    private var content: PreferencesContent!
+    let controls: ControlListPreferences
+    private let model: PreferencesModel
+    var selectedPane: Int { model.selectedPane ?? 0 }
 
-    init(settings: Settings) {
-        self.settings = settings
-        lastLanguage = settings.english
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 740, height: 540), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.title = settings.text("Onecook 设置", "Onecook Settings")
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        window.isMovableByWindowBackground = true
-        super.init(window: window)
-        populate()
-        window.center()
-        NotificationCenter.default.addObserver(self, selector: #selector(languageChanged), name: .settingsChanged, object: nil)
-    }
-    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-    @objc private func languageChanged() {
-        guard lastLanguage != settings.english else { return }
-        lastLanguage = settings.english
-        populate()
-    }
-    private func populate() {
-        let selected = content?.selectedPane ?? 0
-        content = PreferencesContent(settings: settings)
-        content.selectPane(selected)
-        window?.contentViewController = content
-        window?.title = settings.text("Onecook 设置", "Onecook Settings")
-    }
-    func show(pane: Int) {
-        NSApp.activate(ignoringOtherApps: true)
-        showWindow(nil)
-        window?.makeKeyAndOrderFront(nil)
-        content.selectPane(pane)
-    }
-}
-
-private final class PreferencesContent: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
-    private let settings: Settings
-    private let controls: ControlListPreferences
-    private let general: GeneralPreferences
-    private let navigation = NSTableView()
-    private let pageHost = NSView()
-    private(set) var selectedPane = 0
     init(settings: Settings) {
         self.settings = settings
         controls = ControlListPreferences(settings: settings)
-        general = GeneralPreferences(settings: settings)
-        super.init(nibName: nil, bundle: nil)
+        model = PreferencesModel(settings: settings)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 660, height: 500), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.title = settings.text("设置", "Settings")
+        window.toolbarStyle = .unified
+        window.minSize = NSSize(width: 620, height: 460)
+        super.init(window: window)
+        window.contentViewController = NSHostingController(rootView: PreferencesRoot(model: model, controls: controls))
+        window.setContentSize(NSSize(width: 660, height: 500))
+        window.center()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-    override func loadView() {
-        view = NSView(frame: NSRect(x: 0, y: 0, width: 740, height: 540))
-        let sidebar: NSView
-        let sidebarContent = NSView()
-        if #available(macOS 26, *) {
-            let glass = NSGlassEffectView()
-            glass.style = .regular
-            glass.cornerRadius = 0
-            glass.contentView = sidebarContent
-            sidebar = glass
-        } else {
-            let blur = NSVisualEffectView()
-            blur.material = .sidebar
-            blur.blendingMode = .behindWindow
-            sidebar = blur
-            fill(sidebarContent, in: blur)
-        }
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("pane"))
-        navigation.addTableColumn(column)
-        navigation.headerView = nil
-        navigation.style = .sourceList
-        navigation.rowHeight = 34
-        navigation.backgroundColor = .clear
-        navigation.focusRingType = .none
-        navigation.delegate = self
-        navigation.dataSource = self
-        navigation.setAccessibilityLabel(settings.text("设置分类", "Settings categories"))
-        let navScroll = NSScrollView()
-        navScroll.drawsBackground = false
-        navScroll.documentView = navigation
-        navScroll.automaticallyAdjustsContentInsets = false
-        let contact = preferenceGroup()
-        let name = label("Niall Young", size: 13, weight: .semibold)
-        let email = contactLink("niallyoung2002@gmail.com", url: "mailto:niallyoung2002@gmail.com", size: 10)
-        let github = contactLink("GitHub · Niall-Young", url: "https://github.com/Niall-Young")
-        let x = contactLink("X · @NiallxYoung", url: "https://x.com/NiallxYoung")
-        let links = NSStackView(views: [name, email, github, x])
-        links.orientation = .vertical
-        links.alignment = .leading
-        links.spacing = 10
-        fill(links, in: contact.contentView!, inset: 12)
-        let divider = NSBox()
-        divider.boxType = .separator
-        for child in [sidebar, pageHost, divider] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-        for child in [navScroll, contact] { sidebarContent.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-        NSLayoutConstraint.activate([
-            sidebar.leadingAnchor.constraint(equalTo: view.leadingAnchor), sidebar.topAnchor.constraint(equalTo: view.topAnchor), sidebar.bottomAnchor.constraint(equalTo: view.bottomAnchor), sidebar.widthAnchor.constraint(equalToConstant: 228),
-            divider.leadingAnchor.constraint(equalTo: sidebar.trailingAnchor), divider.topAnchor.constraint(equalTo: view.topAnchor), divider.bottomAnchor.constraint(equalTo: view.bottomAnchor), divider.widthAnchor.constraint(equalToConstant: 1),
-            pageHost.leadingAnchor.constraint(equalTo: divider.trailingAnchor), pageHost.trailingAnchor.constraint(equalTo: view.trailingAnchor), pageHost.topAnchor.constraint(equalTo: view.topAnchor, constant: 28), pageHost.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            navScroll.leadingAnchor.constraint(equalTo: sidebarContent.leadingAnchor, constant: 8), navScroll.trailingAnchor.constraint(equalTo: sidebarContent.trailingAnchor, constant: -8), navScroll.topAnchor.constraint(equalTo: sidebarContent.topAnchor, constant: 54), navScroll.bottomAnchor.constraint(equalTo: contact.topAnchor, constant: -20),
-            contact.leadingAnchor.constraint(equalTo: sidebarContent.leadingAnchor, constant: 12), contact.trailingAnchor.constraint(equalTo: sidebarContent.trailingAnchor, constant: -12), contact.bottomAnchor.constraint(equalTo: sidebarContent.bottomAnchor, constant: -16)
-        ])
-        for page in [general as NSViewController, controls] {
-            addChild(page)
-            fill(page.view, in: pageHost)
-        }
-        selectPane(selectedPane)
-    }
-    func selectPane(_ index: Int) {
-        selectedPane = index == 1 ? 1 : 0
-        guard isViewLoaded else { return }
-        navigation.selectRowIndexes(IndexSet(integer: selectedPane), byExtendingSelection: false)
-        general.view.isHidden = selectedPane != 0
-        controls.view.isHidden = selectedPane != 1
-        view.window?.makeFirstResponder(navigation)
-    }
-    func numberOfRows(in tableView: NSTableView) -> Int { 2 }
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let title = row == 0 ? settings.text("基础设置", "General") : settings.text("控制项", "Controls")
-        let cell = NSTableCellView()
-        let image = NSImageView()
-        image.image = NSImage(systemSymbolName: row == 0 ? "gearshape" : "slider.horizontal.3", accessibilityDescription: nil)
-        image.contentTintColor = .secondaryLabelColor
-        let text = label(title, size: 13)
-        cell.imageView = image
-        cell.textField = text
-        for child in [image, text] { cell.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-        NSLayoutConstraint.activate([
-            image.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8), image.centerYAnchor.constraint(equalTo: cell.centerYAnchor), image.widthAnchor.constraint(equalToConstant: 18), image.heightAnchor.constraint(equalToConstant: 18),
-            text.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: 8), text.centerYAnchor.constraint(equalTo: cell.centerYAnchor), text.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8)
-        ])
-        return cell
-    }
-    func tableViewSelectionDidChange(_ notification: Notification) {
-        guard navigation.selectedRow >= 0, navigation.selectedRow != selectedPane else { return }
-        selectPane(navigation.selectedRow)
-    }
-    private func contactLink(_ title: String, url: String, size: CGFloat = 11) -> NSButton {
-        let button = ActionButton(title: title) { NSWorkspace.shared.open(URL(string: url)!) }
-        button.isBordered = false
-        button.font = .systemFont(ofSize: size)
-        button.contentTintColor = .linkColor
-        button.alignment = .left
-        button.toolTip = url
-        return button
+    func selectPane(_ pane: Int) { model.selectedPane = pane == 1 ? 1 : 0 }
+    func show(pane: Int) {
+        selectPane(pane)
+        NSApp.activate(ignoringOtherApps: true)
+        showWindow(nil)
+        window?.makeKeyAndOrderFront(nil)
     }
 }
 
-private func preferenceGroup() -> NSBox {
-    let box = NSBox()
-    box.boxType = .custom
-    box.titlePosition = .noTitle
-    box.cornerRadius = 8
-    box.borderWidth = 0.5
-    box.borderColor = .separatorColor
-    box.fillColor = .controlBackgroundColor
-    box.contentViewMargins = .zero
-    return box
-}
-
-final class GeneralPreferences: NSViewController {
+private final class PreferencesModel: ObservableObject {
     let settings: Settings
-    init(settings: Settings) { self.settings = settings; super.init(nibName: nil, bundle: nil) }
-    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-    override func loadView() {
-        view = NSView()
-        let language = NSPopUpButton()
-        language.addItems(withTitles: ["简体中文", "English"])
-        language.selectItem(at: settings.english ? 1 : 0)
-        language.target = self
-        language.action = #selector(setLanguage(_:))
-        language.setAccessibilityLabel(settings.text("语言", "Language"))
-        let login = ControlSwitch(frame: .zero); login.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        login.setAccessibilityLabel(settings.text("登录时启动", "Launch at login"))
-        login.handler = { [weak login] in
-            guard let login else { return }
-            do {
-                if login.state == .on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-                if SMAppService.mainApp.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
-                login.state = SMAppService.mainApp.status == .enabled ? .on : .off
-            } catch {
-                login.state = SMAppService.mainApp.status == .enabled ? .on : .off
-                let alert = NSAlert(error: error); alert.runModal()
+    @Published var selectedPane: Int? = 0
+    @Published var english: Bool {
+        didSet { if settings.english != english { settings.english = english } }
+    }
+    @Published private var revision = 0
+    private var observer: NSObjectProtocol?
+    init(settings: Settings) {
+        self.settings = settings
+        english = settings.english
+        observer = NotificationCenter.default.addObserver(forName: .settingsChanged, object: settings, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            self.english = settings.english
+            self.revision &+= 1
+        }
+    }
+    deinit { if let observer { NotificationCenter.default.removeObserver(observer) } }
+    func text(_ zh: String, _ en: String) -> String { settings.text(zh, en) }
+    var launchAtLogin: Bool { SMAppService.mainApp.status == .enabled }
+    func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+            if SMAppService.mainApp.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+        } catch { NSAlert(error: error).runModal() }
+        revision &+= 1
+    }
+}
+
+private struct PreferencesRoot: View {
+    @ObservedObject var model: PreferencesModel
+    let controls: ControlListPreferences
+    var body: some View {
+        if #available(macOS 14, *) { layout.toolbar(removing: .sidebarToggle) }
+        else { layout }
+    }
+    private var layout: some View {
+        NavigationSplitView {
+            List(selection: $model.selectedPane) {
+                Label { Text(model.text("基础设置", "General")) } icon: { SettingsBadge(symbol: "gearshape.fill", color: .gray) }.tag(0)
+                Label { Text(model.text("控制项", "Controls")) } icon: { SettingsBadge(symbol: "slider.horizontal.3", color: .blue) }.tag(1)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 190, ideal: 200, max: 220)
+            .safeAreaInset(edge: .bottom, spacing: 0) { ContactCard().padding(12) }
+        } detail: {
+            Group {
+                if model.selectedPane == 1 {
+                    ControlsPreferencesView(controller: controls, english: model.english)
+                } else {
+                    GeneralPreferencesView(model: model)
+                }
+            }
+            .navigationTitle(model.selectedPane == 1 ? model.text("控制项", "Controls") : model.text("基础设置", "General"))
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+}
+
+private struct SettingsBadge: View {
+    let symbol: String
+    let color: Color
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 22, height: 22)
+            .background(color.gradient, in: RoundedRectangle(cornerRadius: 5))
+    }
+}
+
+private struct ContactCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Niall Young").font(.system(size: 12, weight: .semibold))
+            Link("niallyoung2002@gmail.com", destination: URL(string: "mailto:niallyoung2002@gmail.com")!)
+                .font(.system(size: 10))
+            Link("GitHub · Niall-Young", destination: URL(string: "https://github.com/Niall-Young")!)
+            Link("X · @NiallxYoung", destination: URL(string: "https://x.com/NiallxYoung")!)
+        }
+        .font(.system(size: 11))
+        .tint(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+private struct GeneralPreferencesView: View {
+    @ObservedObject var model: PreferencesModel
+    var body: some View {
+        Form {
+            Section(model.text("系统", "System")) {
+                Toggle(model.text("登录时启动", "Launch at login"), isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) }))
+                    .toggleStyle(.switch)
+                Picker(model.text("语言", "Language"), selection: $model.english) {
+                    Text("简体中文").tag(false)
+                    Text("English").tag(true)
+                }
+                LabeledContent(model.text("辅助功能", "Accessibility")) {
+                    Button(model.text("打开系统设置", "Open System Settings")) { SystemSettings.requestAccessibility() }
+                }
+            }
+            Section(model.text("关于", "About")) {
+                HStack(spacing: 12) {
+                    Image(nsImage: NSImage(named: NSImage.applicationIconName) ?? Brand.icon(size: 40))
+                        .resizable().frame(width: 40, height: 40)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Onecook").font(.headline)
+                        Text(model.text("版本 ", "Version ") + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"))
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 4)
             }
         }
-        let permission = ActionButton(title: settings.text("打开系统设置", "Open System Settings")) { SystemSettings.requestAccessibility() }
-        permission.bezelStyle = .rounded; permission.showsBorderOnlyWhileMouseInside = false
-        let heading = label(settings.text("基础设置", "General"), size: 20, weight: .semibold)
-        let group = preferenceGroup()
-        let rows = NSStackView()
-        rows.orientation = .vertical
-        rows.spacing = 0
-        rows.alignment = .width
-        let pairs: [(String, NSView)] = [
-            (settings.text("语言", "Language"), language),
-            (settings.text("登录时启动", "Launch at login"), login),
-            (settings.text("辅助功能", "Accessibility"), permission)
-        ]
-        for (index, pair) in pairs.enumerated() {
-            if index > 0 { let line = NSBox(); line.boxType = .separator; rows.addArrangedSubview(line) }
-            let row = NSView()
-            let title = label(pair.0, size: 13)
-            for child in [title, pair.1] { row.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-            NSLayoutConstraint.activate([
-                row.heightAnchor.constraint(equalToConstant: 48), title.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 14), title.centerYAnchor.constraint(equalTo: row.centerYAnchor),
-                pair.1.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -14), pair.1.centerYAnchor.constraint(equalTo: row.centerYAnchor), title.trailingAnchor.constraint(lessThanOrEqualTo: pair.1.leadingAnchor, constant: -16)
-            ])
-            rows.addArrangedSubview(row)
-        }
-        fill(rows, in: group.contentView!)
-        let aboutHeading = label(settings.text("关于", "About"), size: 13, color: .secondaryLabelColor, weight: .medium)
-        let about = preferenceGroup()
-        let icon = NSImageView()
-        icon.image = NSImage(named: NSImage.applicationIconName)
-        let name = label("Onecook", size: 15, weight: .semibold)
-        let version = label(settings.text("版本 ", "Version ") + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"), size: 12, color: .secondaryLabelColor)
-        let identity = NSStackView(views: [name, version])
-        identity.orientation = .vertical
-        identity.alignment = .leading
-        identity.spacing = 4
-        for child in [icon, identity] { about.contentView!.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-        for child in [heading, group, aboutHeading, about] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
-        NSLayoutConstraint.activate([
-            heading.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24), heading.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-            group.leadingAnchor.constraint(equalTo: heading.leadingAnchor), group.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24), group.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 22),
-            aboutHeading.leadingAnchor.constraint(equalTo: heading.leadingAnchor, constant: 2), aboutHeading.topAnchor.constraint(equalTo: group.bottomAnchor, constant: 28),
-            about.leadingAnchor.constraint(equalTo: group.leadingAnchor), about.trailingAnchor.constraint(equalTo: group.trailingAnchor), about.topAnchor.constraint(equalTo: aboutHeading.bottomAnchor, constant: 10), about.heightAnchor.constraint(equalToConstant: 86),
-            icon.leadingAnchor.constraint(equalTo: about.contentView!.leadingAnchor, constant: 14), icon.centerYAnchor.constraint(equalTo: about.contentView!.centerYAnchor), icon.widthAnchor.constraint(equalToConstant: 48), icon.heightAnchor.constraint(equalToConstant: 48),
-            identity.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 12), identity.centerYAnchor.constraint(equalTo: icon.centerYAnchor)
-        ])
+        .formStyle(.grouped)
     }
-    @objc private func setLanguage(_ sender: NSPopUpButton) { settings.english = sender.indexOfSelectedItem == 1 }
+}
+
+private struct ControlsPreferencesView: NSViewControllerRepresentable {
+    let controller: ControlListPreferences
+    let english: Bool
+    func makeNSViewController(context: Context) -> ControlListPreferences { controller }
+    func updateNSViewController(_ nsViewController: ControlListPreferences, context: Context) { nsViewController.refreshLanguage() }
 }
 
 final class ControlListPreferences: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate {
@@ -249,7 +170,6 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 449, height: 512))
-        let heading = label(settings.text("控制项", "Controls"), size: 20, weight: .semibold)
         search.controlSize = .regular
         search.placeholderString = settings.text("搜索控制项", "Search controls")
         search.delegate = self
@@ -257,7 +177,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         column.width = 393
         table.addTableColumn(column)
         table.headerView = nil
-        table.rowHeight = 40
+        table.rowHeight = 32
         table.intercellSpacing = .zero
         table.style = .inset
         table.selectionHighlightStyle = .none
@@ -272,10 +192,9 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         scroll.drawsBackground = false
         scroll.documentView = table
         scroll.automaticallyAdjustsContentInsets = false
-        for child in [heading, search, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
+        for child in [search, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            heading.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24), heading.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-            search.leadingAnchor.constraint(equalTo: heading.leadingAnchor), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24), search.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 18), search.heightAnchor.constraint(equalToConstant: 28),
+            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 24),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16), scroll.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 14), scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16)
         ])
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: .settingsChanged, object: nil)
@@ -285,8 +204,12 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         table.layoutSubtreeIfNeeded()
         if !items.isEmpty { table.scrollRowToVisible(0) }
     }
-    func focusSearch() { view.window?.makeFirstResponder(search) }
-    @objc private func reload() { guard isViewLoaded else { return }; table.reloadData() }
+    func refreshLanguage() {
+        guard isViewLoaded else { return }
+        search.placeholderString = settings.text("搜索控制项", "Search controls")
+        table.reloadData()
+    }
+    @objc private func reload() { refreshLanguage() }
     func controlTextDidChange(_ obj: Notification) { table.reloadData() }
     func numberOfRows(in tableView: NSTableView) -> Int { items.count }
     func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { false }

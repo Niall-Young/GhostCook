@@ -110,31 +110,19 @@ final class OnecookTests: XCTestCase {
         XCTAssertEqual(nextScroll.documentView?.subviews.count, 31)
         XCTAssertEqual(controller.desiredHeight, 511)
     }
-    @MainActor func testSidebarPreferencesNavigationSearchAndLanguageRebuild() throws {
+    @MainActor func testPreferencesRoutingAndLocalizedControlSearch() throws {
         let controller = PreferencesController(settings: settings)
         let window = try XCTUnwrap(controller.window)
+        let list = controller.controls
+        _ = list.view
         for english in [false, true] {
+            controller.selectPane(1)
             settings.english = english
-            let content = try XCTUnwrap(window.contentViewController)
-            content.view.layoutSubtreeIfNeeded()
-            XCTAssertNil(window.toolbar)
-            let list = try XCTUnwrap(content.children.compactMap { $0 as? ControlListPreferences }.first)
-            let navigation = try XCTUnwrap(descendants(content.view).compactMap { $0 as? NSTableView }.first { $0.style == .sourceList })
-            XCTAssertEqual(navigation.numberOfRows, 2)
-            XCTAssertTrue(list.view.isHidden)
-            navigation.selectRowIndexes(IndexSet(integer: 1), byExtendingSelection: false)
-            XCTAssertFalse(list.view.isHidden)
-            let destinations = descendants(content.view).compactMap { ($0 as? NSButton)?.toolTip }
-            XCTAssertTrue(destinations.contains("mailto:niallyoung2002@gmail.com"))
-            XCTAssertTrue(destinations.contains("https://github.com/Niall-Young"))
-            XCTAssertTrue(destinations.contains("https://x.com/NiallxYoung"))
+            XCTAssertEqual(controller.selectedPane, 1)
             let search = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSSearchField }.first)
             let table = try XCTUnwrap(descendants(list.view).compactMap { $0 as? NSTableView }.first)
             XCTAssertEqual(table.numberOfRows, 31)
             XCTAssertEqual(search.placeholderString, english ? "Search controls" : "搜索控制项")
-            let scroll = try XCTUnwrap(table.enclosingScrollView)
-            XCTAssertGreaterThan(scroll.frame.height, 350)
-            XCTAssertGreaterThan(scroll.frame.width, 350)
             search.stringValue = "aily"
             list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
             XCTAssertEqual(table.numberOfRows, 1)
@@ -144,8 +132,8 @@ final class OnecookTests: XCTestCase {
             search.stringValue = ""
             list.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: search))
             XCTAssertEqual(table.numberOfRows, 31)
-            navigation.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-            XCTAssertTrue(list.view.isHidden)
+            controller.selectPane(0)
+            XCTAssertEqual(controller.selectedPane, 0)
         }
         window.close()
     }
