@@ -203,8 +203,19 @@ private struct ControlsPreferencesView: NSViewControllerRepresentable {
     func updateNSViewController(_ nsViewController: ControlListPreferences, context: Context) { nsViewController.refreshLanguage() }
 }
 
+private final class ControlsSearchFieldCell: NSSearchFieldCell {
+    override func searchTextRect(forBounds rect: NSRect) -> NSRect {
+        super.searchTextRect(forBounds: rect.insetBy(dx: 0, dy: max(0, (rect.height - 28) / 2)))
+    }
+}
+
 private final class ControlsSearchField: NSSearchField {
     static let cornerRadius: CGFloat = 12
+
+    override class var cellClass: AnyClass? {
+        get { ControlsSearchFieldCell.self }
+        set { super.cellClass = newValue }
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5),
@@ -214,7 +225,8 @@ private final class ControlsSearchField: NSSearchField {
         NSColor.separatorColor.setStroke()
         path.lineWidth = 1
         path.stroke()
-        cell?.drawInterior(withFrame: bounds, in: self)
+        let content = bounds.insetBy(dx: 0, dy: max(0, (bounds.height - 28) / 2))
+        cell?.drawInterior(withFrame: content, in: self)
     }
 }
 
@@ -267,7 +279,7 @@ final class ControlListPreferences: NSViewController, NSTableViewDataSource, NST
         group.layer?.masksToBounds = true
         for child in [search, group, scroll] { view.addSubview(child); child.translatesAutoresizingMaskIntoConstraints = false }
         NSLayoutConstraint.activate([
-            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 28),
+            search.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20), search.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), search.topAnchor.constraint(equalTo: view.topAnchor, constant: 16), search.heightAnchor.constraint(equalToConstant: 36),
             group.leadingAnchor.constraint(equalTo: search.leadingAnchor), group.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor, constant: -4), group.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 16), group.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             scroll.leadingAnchor.constraint(equalTo: group.leadingAnchor, constant: 4), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4), scroll.topAnchor.constraint(equalTo: group.topAnchor, constant: 4), scroll.bottomAnchor.constraint(equalTo: group.bottomAnchor, constant: -4)
         ])
