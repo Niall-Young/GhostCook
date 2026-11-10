@@ -107,12 +107,14 @@ struct UpdateInstaller {
     parent_pid=$4
     failure=$5
     launcher=$6
+    wait_limit=${7:-30}
     backup="$work/Previous.app"
     count=0
     while kill -0 "$parent_pid" 2>/dev/null; do
         count=$((count + 1))
-        if [ "$count" -ge 120 ]; then
+        if [ "$count" -ge "$wait_limit" ]; then
             echo '应用未能退出，更新已取消 / App did not quit; update cancelled' > "$failure"
+            /bin/rm -rf "$work"
             exit 1
         fi
         sleep 1
@@ -138,8 +140,8 @@ struct UpdateInstaller {
     /bin/rm -rf "$work"
     """#
 
-    static func launchHelper(_ prepared: Prepared, parentPID: Int32 = ProcessInfo.processInfo.processIdentifier,
-                             failure: URL = failureURL) throws {
+    @discardableResult static func launchHelper(_ prepared: Prepared, parentPID: Int32 = ProcessInfo.processInfo.processIdentifier,
+                             failure: URL = failureURL) throws -> Process {
         try FileManager.default.createDirectory(at: failure.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? FileManager.default.removeItem(at: failure)
         let script = prepared.directory.appendingPathComponent("install.sh")
@@ -150,5 +152,6 @@ struct UpdateInstaller {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()
+        return process
     }
 }

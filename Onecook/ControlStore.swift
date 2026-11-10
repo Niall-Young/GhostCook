@@ -12,6 +12,7 @@ final class ControlStore {
     private var assertion: IOPMAssertionID = 0
     private var refreshInProgress = false
     private var timer: Timer?
+    private var shutdownID: UUID?
     private var focusAuthorizationRequested = false
     private var retryAfter: [String: Date] = [:]
     private(set) var audioDeviceName: String?
@@ -220,6 +221,8 @@ final class ControlStore {
         if !settings.deadlines.isEmpty { changed() }
     }
     func shutdown(completion: @escaping () -> Void) {
+        let id = UUID()
+        shutdownID = id
         timer?.invalidate()
         cleaning.stopAll()
         let timedIDs = Array(settings.deadlines.keys)
@@ -233,7 +236,16 @@ final class ControlStore {
             // terminate() can run a nested AppKit event loop while a main-queue
             // Swift task is still on the stack. That loop cannot re-enter the
             // main dispatch queue, so deliver the reply through the run loop.
-            RunLoop.main.perform(inModes: [.common]) { self.settings.deadlines = failed; completion() }
+            RunLoop.main.perform(inModes: [.common]) {
+                guard self.shutdownID == id else { return }
+                self.settings.deadlines = failed
+                completion()
+            }
         }
+    }
+    func resumeAfterCancelledShutdown() {
+        shutdownID = nil
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.tick() }
     }
 }

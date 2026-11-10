@@ -96,6 +96,7 @@ struct ReleaseService {
     @Published private(set) var state: State = .idle
     let currentVersion: String
     private let service: ReleaseService
+    private var installationMonitor: Timer?
     init(currentVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0", service: ReleaseService = ReleaseService()) {
         self.currentVersion = currentVersion
         self.service = service
@@ -106,13 +107,36 @@ struct ReleaseService {
         try? FileManager.default.removeItem(at: UpdateInstaller.failureURL)
     }
     var busy: Bool { state == .checking || state == .downloading || state == .installing }
+    // AppKit's termination loop must be able to receive failure reports even
+    // while the update task is still on the main dispatch queue's stack.
+    func monitorInstallation(_ helper: Process, failure: URL = UpdateInstaller.failureURL,
+                             cancelTermination: @escaping () -> Void = {
+                                 (NSApp.delegate as? AppDelegate)?.cancelUpdateTermination()
+                             }) {
+        installationMonitor?.invalidate()
+        state = .installing
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            guard !helper.isRunning else { return }
+            timer.invalidate()
+            self.installationMonitor = nil
+            let message = (try? String(contentsOf: failure, encoding: .utf8))
+                ?? "更新未完成，请重试 / Update did not complete; please retry"
+            try? FileManager.default.removeItem(at: failure)
+            // The helper has stopped, so cancelling termination cannot race
+            // with a later replacement of the running application.
+            self.state = .installFailed(message)
+            cancelTermination()
+        }
+        installationMonitor = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
     func install() async {
         guard case .available(let release) = state else { return }
         state = .downloading
         do {
             let prepared = try await Task.detached { try await UpdateInstaller.prepare(release) }.value
-            state = .installing
-            do { try UpdateInstaller.launchHelper(prepared) }
+            do { monitorInstallation(try UpdateInstaller.launchHelper(prepared)) }
             catch {
                 try? FileManager.default.removeItem(at: prepared.directory)
                 throw error

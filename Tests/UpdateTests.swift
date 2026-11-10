@@ -2,6 +2,66 @@ import XCTest
 @testable import Onecook
 
 final class UpdateTests: XCTestCase {
+    @MainActor func testCancelledShutdownCannotTerminateALaterAttempt() async {
+        let suite = "dev.nialyoung.onecook.tests.shutdown." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = ControlStore(settings: Settings(defaults: defaults))
+        let stale = expectation(description: "Cancelled shutdown must not reply")
+        stale.isInverted = true
+        store.shutdown { stale.fulfill() }
+        store.resumeAfterCancelledShutdown()
+        let retried = expectation(description: "A fresh shutdown still completes")
+        store.shutdown { retried.fulfill() }
+        await fulfillment(of: [stale, retried], timeout: 0.5)
+    }
+
+    @MainActor func testHelperFailureStopsSpinnerAndAllowsRetry() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let failure = root.appendingPathComponent("failure.txt")
+        try "退出超时，更新已取消".write(to: failure, atomically: true, encoding: .utf8)
+        let helper = Process()
+        helper.executableURL = URL(fileURLWithPath: "/usr/bin/false")
+        try helper.run()
+        let checker = UpdateChecker(service: ReleaseService(fetch: { _ in
+            Self.response("", path: "/releases/tag/v0.1.0")
+        }))
+        let cancelled = expectation(description: "Pending termination cancelled")
+        checker.monitorInstallation(helper, failure: failure) { cancelled.fulfill() }
+        XCTAssertTrue(checker.busy)
+        await fulfillment(of: [cancelled], timeout: 3)
+        XCTAssertEqual(checker.state, .installFailed("退出超时，更新已取消"))
+        XCTAssertFalse(checker.busy)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: failure.path))
+        await checker.check()
+        XCTAssertEqual(checker.state, .current)
+    }
+
+    func testHelperExitTimeoutKeepsOriginalAndRemovesStaging() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+        let target = root.appendingPathComponent("GhostCook.app")
+        let work = root.appendingPathComponent("work")
+        try fm.createDirectory(at: target, withIntermediateDirectories: false)
+        try fm.createDirectory(at: work, withIntermediateDirectories: false)
+        let marker = target.appendingPathComponent("version")
+        try "old".write(to: marker, atomically: true, encoding: .utf8)
+        let script = root.appendingPathComponent("helper.sh")
+        try UpdateInstaller.helperScript.write(to: script, atomically: true, encoding: .utf8)
+        let failure = root.appendingPathComponent("failure.txt")
+        // The test host remains alive; a one-iteration limit avoids real waits.
+        XCTAssertThrowsError(try UpdateInstaller.run("/bin/sh", [script.path, target.path,
+            work.appendingPathComponent("GhostCook.app").path, work.path,
+            String(ProcessInfo.processInfo.processIdentifier), failure.path, "/usr/bin/true", "1"]))
+        XCTAssertEqual(try String(contentsOf: marker), "old")
+        XCTAssertTrue(try String(contentsOf: failure).contains("更新已取消"))
+        XCTAssertFalse(fm.fileExists(atPath: work.path))
+    }
+
     func testUpdateTerminationFromSwiftTaskExits() throws {
         let executable = try XCTUnwrap(Bundle.main.executableURL)
         let environment = ProcessInfo.processInfo.environment.filter {
@@ -9,7 +69,9 @@ final class UpdateTests: XCTestCase {
         }
         // A child app runs the real terminateLater/shutdown handshake, without
         // touching user preferences, timers, Trash, Downloads or other apps.
-        _ = try Command.run(executable.path, ["--test-update-shutdown"], timeout: 10, environment: environment)
+        for mode in ["--test-update-shutdown", "--test-update-shutdown-failure"] {
+            _ = try Command.run(executable.path, [mode], timeout: 10, environment: environment)
+        }
     }
 
     func testNumericVersions() throws {

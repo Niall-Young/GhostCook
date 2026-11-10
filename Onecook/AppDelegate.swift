@@ -55,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var localMonitor: Any?
     private var refreshTimer: Timer?
     private var terminating = false
+    private var terminationAttempt = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -159,8 +160,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !terminating else { return .terminateLater }
         terminating = true; hidePanel()
-        store.shutdown { sender.reply(toApplicationShouldTerminate: true) }
+        terminationAttempt += 1
+        let attempt = terminationAttempt
+        store.shutdown {
+            guard self.terminating, self.terminationAttempt == attempt else { return }
+            sender.reply(toApplicationShouldTerminate: true)
+        }
         return .terminateLater
+    }
+    func cancelUpdateTermination() {
+        guard terminating else { return }
+        terminating = false
+        terminationAttempt += 1
+        store.resumeAfterCancelledShutdown()
+        NSApp.reply(toApplicationShouldTerminate: false)
     }
     func applicationWillTerminate(_ notification: Notification) {
         if let globalMonitor { NSEvent.removeMonitor(globalMonitor) }
