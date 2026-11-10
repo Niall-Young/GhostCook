@@ -11,6 +11,7 @@
 		287EB1AECED7AECD6F127E18 /* Updates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797A6F585365C8BBCE12CE8C /* Updates.swift */; };
 		2D923D5905D9028F533D3113 /* Devices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6894DF376816F2D596664885 /* Devices.swift */; };
 		3F4F7FDE02703BF266B76A37 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA16245512262DBF75A7A50C /* Model.swift */; };
+		4F5CACD0EA5C8FDFBCDD20B9 /* UpdateInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18852EB450BD2D0E00BC8AC9 /* UpdateInstaller.swift */; };
 		4F77E6BE3F84141562F61705 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EF854241D4A807A6E28DFA /* AppDelegate.swift */; };
 		52BB18196D43986A9B09DB50 /* AilyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC8B9597AC405476C6FB351D /* AilyService.swift */; };
 		5950B41BDCD0EB752335FC2E /* CleaningController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F0FDE7A3D1BA11DA1BEB6C /* CleaningController.swift */; };
@@ -43,6 +44,7 @@
 /* Begin PBXFileReference section */
 		10D191DD1D851DC3B904A579 /* Interface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Interface.swift; sourceTree = "<group>"; };
 		150A6A63DE18D92705AA7BE9 /* SystemSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSupport.swift; sourceTree = "<group>"; };
+		18852EB450BD2D0E00BC8AC9 /* UpdateInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstaller.swift; sourceTree = "<group>"; };
 		24BDD06B45B70396F558C727 /* GhostCook.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = GhostCook.icon; sourceTree = "<group>"; };
 		2F78E35F8C88F1E78B037E4D /* Preferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preferences.swift; sourceTree = "<group>"; };
 		39C8BC346DD8A13744E39EFC /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -126,6 +128,7 @@
 				FA16245512262DBF75A7A50C /* Model.swift */,
 				2F78E35F8C88F1E78B037E4D /* Preferences.swift */,
 				150A6A63DE18D92705AA7BE9 /* SystemSupport.swift */,
+				18852EB450BD2D0E00BC8AC9 /* UpdateInstaller.swift */,
 				797A6F585365C8BBCE12CE8C /* Updates.swift */,
 				64672965B49D4A46A9204AF8 /* Resources */,
 			);
@@ -267,6 +270,7 @@
 				3F4F7FDE02703BF266B76A37 /* Model.swift in Sources */,
 				81AE929E4BDFFBA68F957FD6 /* Preferences.swift in Sources */,
 				0A58F58CB4E8AF0DFEB84297 /* SystemSupport.swift in Sources */,
+				4F5CACD0EA5C8FDFBCDD20B9 /* UpdateInstaller.swift in Sources */,
 				287EB1AECED7AECD6F127E18 /* Updates.swift in Sources */,
 				E09A2E7F1770DFBE0F79CF68 /* main.swift in Sources */,
 			);

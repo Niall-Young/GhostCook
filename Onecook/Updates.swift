@@ -63,7 +63,7 @@ struct ReleaseService {
             guard let range = Range(match.range(at: 1), in: html),
                   let url = URL(string: String(html[range]).replacingOccurrences(of: "&amp;", with: "&"), relativeTo: repository)?.absoluteURL,
                   url.scheme == "https", url.host == "github.com", url.path.hasPrefix(prefix),
-                  ["dmg", "zip", "pkg"].contains(url.pathExtension.lowercased()) else { return nil }
+                  ["dmg", "zip"].contains(url.pathExtension.lowercased()) else { return nil }
             let name = url.lastPathComponent.lowercased()
             guard !name.contains("windows"), !name.contains("linux") else { return nil }
             let arm = name.contains("arm64") || name.contains("aarch64") || name.contains("apple-silicon")
@@ -74,7 +74,7 @@ struct ReleaseService {
         }
         return candidates.sorted {
             func priority(_ url: URL) -> Int {
-                (url.lastPathComponent.lowercased().contains("universal") ? 0 : 10) + (["dmg": 0, "zip": 1, "pkg": 2][url.pathExtension.lowercased()] ?? 3)
+                (url.lastPathComponent.lowercased().contains("universal") ? 0 : 10) + (["zip": 0, "dmg": 1][url.pathExtension.lowercased()] ?? 3)
             }
             return priority($0) < priority($1)
         }.first
@@ -91,6 +91,7 @@ struct ReleaseService {
 @MainActor final class UpdateChecker: ObservableObject {
     enum State: Equatable {
         case idle, checking, noRelease, current, available(AvailableRelease), failed
+        case downloading, installing, installFailed(String)
     }
     @Published private(set) var state: State = .idle
     let currentVersion: String
@@ -99,8 +100,30 @@ struct ReleaseService {
         self.currentVersion = currentVersion
         self.service = service
     }
+    func recoverFailure() {
+        guard state == .idle, let failure = try? String(contentsOf: UpdateInstaller.failureURL, encoding: .utf8) else { return }
+        state = .installFailed(failure)
+        try? FileManager.default.removeItem(at: UpdateInstaller.failureURL)
+    }
+    var busy: Bool { state == .checking || state == .downloading || state == .installing }
+    func install() async {
+        guard case .available(let release) = state else { return }
+        state = .downloading
+        do {
+            let prepared = try await Task.detached { try await UpdateInstaller.prepare(release) }.value
+            state = .installing
+            do { try UpdateInstaller.launchHelper(prepared) }
+            catch {
+                try? FileManager.default.removeItem(at: prepared.directory)
+                throw error
+            }
+            NSApplication.shared.terminate(nil)
+        } catch {
+            state = .installFailed(error.localizedDescription)
+        }
+    }
     func check() async {
-        guard state != .checking else { return }
+        guard !busy else { return }
         state = .checking
         do {
             guard let release = try await service.latest(currentVersion: currentVersion) else { state = .noRelease; return }
@@ -115,30 +138,30 @@ struct ReleaseService {
 struct UpdatePreferencesView: View {
     let english: Bool
     @StateObject private var checker = UpdateChecker()
-    @State private var openFailed = false
     private func text(_ zh: String, _ en: String) -> String { english ? en : zh }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Button(text("检查更新", "Check for Updates")) {
-                    openFailed = false
                     Task { await checker.check() }
                 }
-                .disabled(checker.state == .checking)
-                if checker.state == .checking { ProgressView().controlSize(.small) }
+                .disabled(checker.busy)
+                if checker.busy { ProgressView().controlSize(.small) }
                 if case .available(let release) = checker.state {
                     Spacer()
-                    Button(release.download == nil ? text("查看发布页面", "View Release") : text("下载更新", "Download Update")) {
-                        openFailed = !NSWorkspace.shared.open(release.download ?? release.page)
+                    Button(text("更新并重新启动", "Update and Restart")) {
+                        Task { await checker.install() }
                     }
+                    .disabled(release.download == nil)
                 }
             }
             if let status {
                 Text(status).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            if openFailed { Text(text("无法打开下载链接，请重试。", "Unable to open the download link. Please try again.")).foregroundStyle(.red) }
+
         }
         .font(.system(size: 14))
+        .onAppear { checker.recoverFailure() }
     }
     private var status: String? {
         switch checker.state {
@@ -146,7 +169,13 @@ struct UpdatePreferencesView: View {
         case .checking: return text("正在检查更新…", "Checking for updates…")
         case .noRelease: return text("尚无发布版本", "No releases available yet")
         case .current: return text("已是最新版本", "You’re up to date")
-        case .available(let release): return text("发现新版本 ", "New version available: ") + release.tag
+        case .available(let release):
+            return release.download == nil
+                ? text("此版本没有适用于当前 Mac 的更新包", "No compatible update archive for this Mac")
+                : text("发现新版本 ", "New version available: ") + release.tag
+        case .downloading: return text("正在下载并验证更新…", "Downloading and verifying update…")
+        case .installing: return text("正在安装，即将重新启动…", "Installing; restarting shortly…")
+        case .installFailed(let message): return text("更新失败：", "Update failed: ") + message
         case .failed: return text("检查更新失败，请稍后重试。", "Unable to check for updates. Please try again later.")
         }
     }

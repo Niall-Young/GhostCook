@@ -65,6 +65,65 @@ final class UpdateTests: XCTestCase {
         }
     }
 
+    func testZipPreferredAndPackageInstallerExcluded() {
+        let prefix = "/Niall-Young/GhostCook/releases/download/v1.0.2/"
+        let html = ["GhostCook-universal.dmg", "GhostCook-universal.zip", "GhostCook.pkg"]
+            .map { "<a href='\(prefix)\($0)'>download</a>" }.joined()
+        XCTAssertEqual(ReleaseService.downloadURL(html: html, tag: "v1.0.2")?.pathExtension, "zip")
+        XCTAssertNil(ReleaseService.downloadURL(html: "<a href='\(prefix)GhostCook.pkg'>pkg</a>", tag: "v1.0.2"))
+    }
+
+    func testSigningRequirementAcceptsDeveloperIDSignedHost() throws {
+        try UpdateInstaller.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", "-R", "=" + UpdateInstaller.signingRequirement, Bundle.main.bundleURL.path])
+    }
+
+    func testInstallerRejectsMismatchedOrUnsignedApps() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let app = root.appendingPathComponent("GhostCook.app")
+        let macOS = app.appendingPathComponent("Contents/MacOS")
+        try FileManager.default.createDirectory(at: macOS, withIntermediateDirectories: true)
+        let info: [String: Any] = ["CFBundleIdentifier": "dev.nialyoung.onecook", "CFBundleShortVersionString": "1.0.2", "CFBundleExecutable": "GhostCook"]
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+            .write(to: app.appendingPathComponent("Contents/Info.plist"))
+        let executable = macOS.appendingPathComponent("GhostCook")
+        try "#!/bin/sh\nexit 0\n".write(to: executable, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+        for tag in ["v1.0.3", "v1.0.2"] {
+            let release = AvailableRelease(tag: tag, page: ReleaseService.repository, download: nil)
+            XCTAssertThrowsError(try UpdateInstaller.validate(app, release: release))
+        }
+    }
+
+    func testHelperReplacesAndRollsBackWithoutTouchingInstalledApps() throws {
+        for mode in ["success", "missing-stage", "launch-failure"] {
+            let fm = FileManager.default
+            // Spaces, quotes, dollar signs and Unicode must survive positional arguments.
+            let root = fm.temporaryDirectory.appendingPathComponent("更新 ' $ " + UUID().uuidString)
+            defer { try? fm.removeItem(at: root) }
+            let work = root.appendingPathComponent("work")
+            let target = root.appendingPathComponent("GhostCook.app")
+            let staged = work.appendingPathComponent("GhostCook.app")
+            try fm.createDirectory(at: work, withIntermediateDirectories: true)
+            try fm.createDirectory(at: target, withIntermediateDirectories: false)
+            try "old".write(to: target.appendingPathComponent("version"), atomically: true, encoding: .utf8)
+            if mode != "missing-stage" {
+                try fm.createDirectory(at: staged, withIntermediateDirectories: false)
+                try "new".write(to: staged.appendingPathComponent("version"), atomically: true, encoding: .utf8)
+            }
+            let script = root.appendingPathComponent("helper.sh")
+            try UpdateInstaller.helperScript.write(to: script, atomically: true, encoding: .utf8)
+            let failure = root.appendingPathComponent("failure.txt")
+            let arguments = [script.path, target.path, staged.path, work.path, "2147483647", failure.path,
+                             mode == "launch-failure" ? "/usr/bin/false" : "/usr/bin/true"]
+            if mode == "success" { try UpdateInstaller.run("/bin/sh", arguments) }
+            else { XCTAssertThrowsError(try UpdateInstaller.run("/bin/sh", arguments)) }
+            XCTAssertEqual(try String(contentsOf: target.appendingPathComponent("version")), mode == "success" ? "new" : "old")
+            XCTAssertEqual(fm.fileExists(atPath: failure.path), mode != "success")
+            if mode == "success" { XCTAssertFalse(fm.fileExists(atPath: work.path)) }
+        }
+    }
+
     private static func response(_ body: String, path: String, status: Int = 200) -> (Data, HTTPURLResponse) {
         (Data(body.utf8), HTTPURLResponse(url: URL(string: "https://github.com/Niall-Young/GhostCook" + path)!, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!)
     }
