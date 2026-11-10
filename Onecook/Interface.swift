@@ -66,6 +66,15 @@ func fill(_ child: NSView, in parent: NSView, inset: CGFloat = 0) {
 }
 
 final class ControlsPanel: NSPanel {
+    override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
+        super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
+        isOpaque = false
+        backgroundColor = .clear
+        // Glass renders its own rounded edge. A second window shadow can expose
+        // the rectangular backing surface around its transparent corners.
+        if #available(macOS 26, *) { hasShadow = false }
+        else { hasShadow = true }
+    }
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
     override func cancelOperation(_ sender: Any?) { orderOut(nil) }

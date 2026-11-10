@@ -69,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controls.onQuit = { NSApp.terminate(nil) }
         controls.onResize = { [weak self] in if self?.panel?.isVisible == true { self?.positionPanel() } }
         panel = ControlsPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: controls.desiredHeight), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true; panel.level = .popUpMenu
+        panel.level = .popUpMenu
         panel.isReleasedWhenClosed = false; panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.contentViewController = controls; panel.delegate = self
