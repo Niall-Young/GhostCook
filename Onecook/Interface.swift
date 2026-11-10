@@ -103,6 +103,11 @@ final class ControlsViewController: NSViewController {
         if #available(macOS 26, *) {
             let glass = NSGlassEffectView(frame: frame)
             glass.style = .regular; glass.tintColor = nil; glass.cornerRadius = 18
+            // The glass corner radius shapes the material, but the backing layer
+            // must also clip content and compositing outside those corners.
+            glass.wantsLayer = true
+            glass.layer?.cornerRadius = glass.cornerRadius
+            glass.layer?.masksToBounds = true
             let content = NSView(frame: frame); content.autoresizingMask = [.width, .height]
             glass.contentView = content; host = content; view = glass
         } else {

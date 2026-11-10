@@ -159,7 +159,12 @@ final class OnecookTests: XCTestCase {
         let view = controller.view
         view.setFrameSize(NSSize(width: 360, height: controller.desiredHeight))
         view.layoutSubtreeIfNeeded()
-        if #available(macOS 26, *) { XCTAssertTrue(view is NSGlassEffectView) }
+        if #available(macOS 26, *) {
+            let glass = view as? NSGlassEffectView
+            XCTAssertNotNil(glass)
+            XCTAssertEqual(glass?.layer?.cornerRadius, glass?.cornerRadius)
+            XCTAssertEqual(glass?.layer?.masksToBounds, true)
+        }
         else { XCTAssertTrue(view is NSVisualEffectView) }
         let scroll = descendants(view).compactMap { $0 as? NSScrollView }.first!
         let scrollFrame = view.convert(scroll.bounds, from: scroll)
