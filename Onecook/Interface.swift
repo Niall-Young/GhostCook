@@ -70,9 +70,9 @@ final class ControlsPanel: NSPanel {
         super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
         isOpaque = false
         backgroundColor = .clear
-        // The material's backing layer is clipped to its rounded shape below,
-        // so the system window shadow can follow that shape.
-        hasShadow = true
+        // Glass supplies its own edge and shadow inside the transparent host.
+        if #available(macOS 26, *) { hasShadow = false }
+        else { hasShadow = true }
     }
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -80,6 +80,10 @@ final class ControlsPanel: NSPanel {
 }
 
 final class ControlsViewController: NSViewController {
+    static var shadowInset: CGFloat {
+        if #available(macOS 26, *) { return 24 }
+        return 0
+    }
     let store: ControlStore
     var settings: Settings { store.settings }
     var onSettings: ((Int) -> Void)?
@@ -91,6 +95,9 @@ final class ControlsViewController: NSViewController {
     private let topPadding: CGFloat = 12
     private let footerHeight: CGFloat = 66
     var desiredHeight: CGFloat { topPadding + 1 + footerHeight + CGFloat(min(max(settings.selectedControls.count, 1), 8)) * 55 }
+    var panelSize: NSSize {
+        NSSize(width: 360 + Self.shadowInset * 2, height: desiredHeight + Self.shadowInset * 2)
+    }
     init(store: ControlStore) {
         self.store = store; super.init(nibName: nil, bundle: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(rebuild), name: .settingsChanged, object: nil)
@@ -100,15 +107,21 @@ final class ControlsViewController: NSViewController {
     override func loadView() {
         let frame = NSRect(x: 0, y: 0, width: 360, height: desiredHeight)
         if #available(macOS 26, *) {
+            let container = NSView(frame: NSRect(origin: .zero, size: panelSize))
+            container.wantsLayer = true
+            container.layer?.backgroundColor = NSColor.clear.cgColor
+            container.layer?.masksToBounds = false
             let glass = NSGlassEffectView(frame: frame)
             glass.style = .regular; glass.tintColor = nil; glass.cornerRadius = 18
-            // The glass corner radius shapes the material, but the backing layer
-            // must also clip content and compositing outside those corners.
-            glass.wantsLayer = true
-            glass.layer?.cornerRadius = glass.cornerRadius
-            glass.layer?.masksToBounds = true
+            // Leave the glass effect unclipped so AppKit can draw its own shadow.
+            // Clip only the embedded controls, not the material's compositing layer.
             let content = NSView(frame: frame); content.autoresizingMask = [.width, .height]
-            glass.contentView = content; host = content; view = glass
+            content.wantsLayer = true
+            content.layer?.cornerRadius = glass.cornerRadius
+            content.layer?.masksToBounds = true
+            glass.contentView = content
+            fill(glass, in: container, inset: Self.shadowInset)
+            host = content; view = container
         } else {
             let blur = NSVisualEffectView(frame: frame)
             blur.material = .popover; blur.blendingMode = .behindWindow; blur.state = .active

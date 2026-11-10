@@ -143,31 +143,33 @@ final class OnecookTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(start), 4)
         XCTAssertThrowsError(try Command.run("/usr/bin/false", []))
     }
-    @MainActor func testTransparentPanelKeepsSystemShadow() {
+    @MainActor func testTransparentPanelUsesOnlyOneShadowSource() {
         let panel = ControlsPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: 519),
                                   styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         defer { panel.close() }
         XCTAssertFalse(panel.isOpaque)
         XCTAssertEqual(panel.backgroundColor, .clear)
-        XCTAssertTrue(panel.hasShadow)
+        if #available(macOS 26, *) { XCTAssertFalse(panel.hasShadow) }
+        else { XCTAssertTrue(panel.hasShadow) }
     }
     @MainActor func testCurrentSystemUsesNativeMaterialAndRowsAreBounded() {
         let store = ControlStore(settings: settings)
         let controller = ControlsViewController(store: store)
         let view = controller.view
-        view.setFrameSize(NSSize(width: 360, height: controller.desiredHeight))
+        view.setFrameSize(controller.panelSize)
         view.layoutSubtreeIfNeeded()
         if #available(macOS 26, *) {
-            let glass = view as? NSGlassEffectView
+            let glass = descendants(view).compactMap { $0 as? NSGlassEffectView }.first
             XCTAssertNotNil(glass)
-            XCTAssertEqual(glass?.layer?.cornerRadius, glass?.cornerRadius)
-            XCTAssertEqual(glass?.layer?.masksToBounds, true)
+            XCTAssertNotEqual(glass?.layer?.masksToBounds, true)
+            XCTAssertEqual(glass?.contentView?.layer?.masksToBounds, true)
+            XCTAssertEqual(glass?.frame, view.bounds.insetBy(dx: 24, dy: 24))
         }
         else { XCTAssertTrue(view is NSVisualEffectView) }
         let scroll = descendants(view).compactMap { $0 as? NSScrollView }.first!
         let scrollFrame = view.convert(scroll.bounds, from: scroll)
-        XCTAssertEqual(view.bounds.maxY - scrollFrame.maxY, 12, accuracy: 1)
+        XCTAssertEqual(view.bounds.maxY - scrollFrame.maxY, 12 + ControlsViewController.shadowInset, accuracy: 1)
         XCTAssertEqual(scroll.frame.height, 440, accuracy: 1)
         XCTAssertFalse(scroll.hasVerticalScroller)
         settings.visible = Control.all.map(\.id)

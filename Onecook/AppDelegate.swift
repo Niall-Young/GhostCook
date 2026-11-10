@@ -68,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controls.onSettings = { [weak self] in self?.showPreferences($0) }
         controls.onQuit = { NSApp.terminate(nil) }
         controls.onResize = { [weak self] in if self?.panel?.isVisible == true { self?.positionPanel() } }
-        panel = ControlsPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: controls.desiredHeight), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel = ControlsPanel(contentRect: NSRect(origin: .zero, size: controls.panelSize), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.level = .popUpMenu
         panel.isReleasedWhenClosed = false; panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
@@ -120,7 +120,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard let screen = NSScreen.screens.first(where: { $0.frame.intersects(anchor) }), anchor.minX >= screen.frame.minX, anchor.maxX <= screen.frame.maxX, anchor.maxY > screen.visibleFrame.maxY else { return false }
         let height = min(controls.desiredHeight, screen.visibleFrame.height - 12)
         let x = min(max(anchor.midX - 180, screen.visibleFrame.minX + 6), screen.visibleFrame.maxX - 366)
-        panel.setFrame(NSRect(x: x, y: anchor.minY - height - 4, width: 360, height: height), display: true)
+        let inset = ControlsViewController.shadowInset
+        panel.setFrame(NSRect(x: x - inset, y: anchor.minY - height - 4 - inset,
+                              width: 360 + inset * 2, height: height + inset * 2), display: true)
         return true
     }
     private func hidePanel() { panel?.orderOut(nil) }
