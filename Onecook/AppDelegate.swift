@@ -109,6 +109,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if let front = NSWorkspace.shared.frontmostApplication, front.processIdentifier != getpid() { store.previousApp = front }
         guard positionPanel() else { NSSound.beep(); return }
         panel.makeKeyAndOrderFront(nil)
+        panel.contentView?.layoutSubtreeIfNeeded()
+        panel.displayIfNeeded()
+        panel.invalidateShadow()
         store.refresh()
     }
     @discardableResult private func positionPanel() -> Bool {

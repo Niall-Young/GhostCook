@@ -70,10 +70,9 @@ final class ControlsPanel: NSPanel {
         super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
         isOpaque = false
         backgroundColor = .clear
-        // Glass renders its own rounded edge. A second window shadow can expose
-        // the rectangular backing surface around its transparent corners.
-        if #available(macOS 26, *) { hasShadow = false }
-        else { hasShadow = true }
+        // The material's backing layer is clipped to its rounded shape below,
+        // so the system window shadow can follow that shape.
+        hasShadow = true
     }
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }

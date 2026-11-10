@@ -143,15 +143,14 @@ final class OnecookTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(start), 4)
         XCTAssertThrowsError(try Command.run("/usr/bin/false", []))
     }
-    @MainActor func testTransparentPanelDoesNotAddWindowShadowToGlass() {
+    @MainActor func testTransparentPanelKeepsSystemShadow() {
         let panel = ControlsPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: 519),
                                   styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         defer { panel.close() }
         XCTAssertFalse(panel.isOpaque)
         XCTAssertEqual(panel.backgroundColor, .clear)
-        if #available(macOS 26, *) { XCTAssertFalse(panel.hasShadow) }
-        else { XCTAssertTrue(panel.hasShadow) }
+        XCTAssertTrue(panel.hasShadow)
     }
     @MainActor func testCurrentSystemUsesNativeMaterialAndRowsAreBounded() {
         let store = ControlStore(settings: settings)
