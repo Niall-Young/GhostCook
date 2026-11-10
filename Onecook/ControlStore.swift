@@ -230,7 +230,10 @@ final class ControlStore {
                 catch { failed[id] = Date() }
             }
             if self.assertion != 0 { IOPMAssertionRelease(self.assertion); self.assertion = 0 }
-            DispatchQueue.main.async { self.settings.deadlines = failed; completion() }
+            // terminate() can run a nested AppKit event loop while a main-queue
+            // Swift task is still on the stack. That loop cannot re-enter the
+            // main dispatch queue, so deliver the reply through the run loop.
+            RunLoop.main.perform(inModes: [.common]) { self.settings.deadlines = failed; completion() }
         }
     }
 }

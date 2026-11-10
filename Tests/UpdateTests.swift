@@ -2,6 +2,16 @@ import XCTest
 @testable import Onecook
 
 final class UpdateTests: XCTestCase {
+    func testUpdateTerminationFromSwiftTaskExits() throws {
+        let executable = try XCTUnwrap(Bundle.main.executableURL)
+        let environment = ProcessInfo.processInfo.environment.filter {
+            !$0.key.hasPrefix("XCTest") && !$0.key.hasPrefix("XCInject") && !$0.key.hasPrefix("DYLD_")
+        }
+        // A child app runs the real terminateLater/shutdown handshake, without
+        // touching user preferences, timers, Trash, Downloads or other apps.
+        _ = try Command.run(executable.path, ["--test-update-shutdown"], timeout: 10, environment: environment)
+    }
+
     func testNumericVersions() throws {
         XCTAssertEqual(ReleaseVersion("v1.2"), ReleaseVersion("1.2.0"))
         XCTAssertLessThan(try XCTUnwrap(ReleaseVersion("0.9.9")), try XCTUnwrap(ReleaseVersion("0.10.0")))

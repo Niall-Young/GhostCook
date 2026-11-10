@@ -82,7 +82,7 @@ CONFIGURATION=Release ./scripts/build.sh 'ARCHS=arm64 x86_64' ONLY_ACTIVE_ARCH=N
 
 产物位于 `build/DerivedData/Build/Products/Release/GhostCook.app`。
 
-自动测试覆盖配置恢复、空选择、排序、定时持久化、31 个符号、真实唤醒断言、材质和滚动布局、命令参数、输出与超时，以及 aily 状态解析；更新测试覆盖版本比较、安装包架构筛选、无发布版本与 HTTP 错误，以及拒绝无效应用、替换安装与失败回滚。实际运行界面检查不等于所有系统操作已完成实机验收。
+自动测试覆盖配置恢复、空选择、排序、定时持久化、31 个符号、真实唤醒断言、材质和滚动布局、命令参数、输出与超时，以及 aily 状态解析；更新测试覆盖版本比较、安装包架构筛选、无发布版本与 HTTP 错误，以及拒绝无效应用、替换安装与失败回滚；独立子进程验证更新任务触发退出时能完成清理并正常结束。实际运行界面检查不等于所有系统操作已完成实机验收。
 
 Debug 包可通过明确的诊断参数打开菜单栏面板或设置窗口；此入口不会进入 Release 包：
 
@@ -155,7 +155,7 @@ CONFIGURATION=Release ./scripts/build.sh 'ARCHS=arm64 x86_64' ONLY_ACTIVE_ARCH=N
 
 The app is written to `build/DerivedData/Build/Products/Release/GhostCook.app`.
 
-Automated tests cover preference recovery, empty selection, ordering, timer persistence, all 31 symbols, a real wake assertion, material and scrolling layout, command arguments, output and timeout, and aily status parsing; update tests cover version comparison, installer architecture selection, missing releases and HTTP errors, invalid app rejection, replacement and failure rollback. Inspecting the running interface does not establish acceptance of every system operation.
+Automated tests cover preference recovery, empty selection, ordering, timer persistence, all 31 symbols, a real wake assertion, material and scrolling layout, command arguments, output and timeout, and aily status parsing; update tests cover version comparison, installer architecture selection, missing releases and HTTP errors, invalid app rejection, replacement and failure rollback. A separate child process verifies that update-triggered termination completes cleanup and exits normally. Inspecting the running interface does not establish acceptance of every system operation.
 
 The Debug app supports explicit diagnostic arguments to open the menu panel or settings window; this entry is absent from Release builds:
 
