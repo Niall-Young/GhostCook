@@ -81,7 +81,9 @@ final class ControlsPanel: NSPanel {
 
 final class ControlsViewController: NSViewController {
     static var shadowInset: CGFloat {
-        if #available(macOS 26, *) { return 24 }
+        // The glass shadow extends beyond 24 pt, especially below the panel.
+        // Reserve its full fade-out inside the window backing surface.
+        if #available(macOS 26, *) { return 64 }
         return 0
     }
     let store: ControlStore

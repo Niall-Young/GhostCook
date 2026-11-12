@@ -164,7 +164,7 @@ final class OnecookTests: XCTestCase {
             XCTAssertNotNil(glass)
             XCTAssertNotEqual(glass?.layer?.masksToBounds, true)
             XCTAssertEqual(glass?.contentView?.layer?.masksToBounds, true)
-            XCTAssertEqual(glass?.frame, view.bounds.insetBy(dx: 24, dy: 24))
+            XCTAssertEqual(glass?.frame, view.bounds.insetBy(dx: ControlsViewController.shadowInset, dy: ControlsViewController.shadowInset))
         }
         else { XCTAssertTrue(view is NSVisualEffectView) }
         let scroll = descendants(view).compactMap { $0 as? NSScrollView }.first!
